@@ -234,8 +234,10 @@ small.u{font-size:16px;font-weight:600}
   <section id="bok" hidden>
     <div class="stats" id="stats"></div>
     <div id="list"></div>
-    <h2>Spara och flytta</h2>
-    <p class="muted">Passen sparas i den här webbläsaren. Ta en säkerhetskopia då och då.</p>
+    <h2>Molnkopia</h2>
+    <div id="syncBox"></div>
+    <h2>Filer</h2>
+    <p class="muted">Säkerhetskopia som fil och export till Excel.</p>
     <div class="backup">
       <button class="btn small" id="backupBtn">Spara säkerhetskopia</button>
       <label class="btn small filebtn">Läs in säkerhetskopia<input type="file" id="restoreFile" accept=".json,application/json"></label>
@@ -823,6 +825,7 @@ $("passForm").addEventListener("submit", function(ev){
   delete p._new; delete p._hamtar;
   if (!p.id){ p.id = newId(); p.createdAt = Date.now(); }
   else { var prev = sessions.find(function(s){ return s.id === p.id; }); changedWindow = !prev || prev.start !== p.start || prev.end !== p.end || !p.auto; }
+  p.updatedAt = Date.now();
   p.hugg.sort(function(a, b){ return (a.t || 0) - (b.t || 0); });
   sessions = sessions.filter(function(s){ return s.id !== p.id; }).concat([p]);
   persist(); form = null; editing = null; renderPass(); showTab("bok"); toast("Pass sparat");
@@ -871,7 +874,7 @@ $("list").addEventListener("click", function(ev){
   var ed = ev.target.closest("[data-edit]"), dl = ev.target.closest("[data-del]"), fe = ev.target.closest("[data-fetch]");
   if (ed){ var p = sessions.find(function(x){ return x.id === ed.dataset.edit; }); if (p) openForm(p, false); }
   if (fe) backfill([fe.dataset.fetch], true);
-  if (dl && confirm("Ta bort passet? Det går inte att ångra.")){ sessions = sessions.filter(function(s){ return s.id !== dl.dataset.del; }); persist(); toast("Pass borttaget"); }
+  if (dl && confirm("Ta bort passet? Det går inte att ångra.")){ tomb[dl.dataset.del] = Date.now(); save(TK, tomb); sessions = sessions.filter(function(s){ return s.id !== dl.dataset.del; }); persist(); toast("Pass borttaget"); }
 });
 var queue = [], running = false;
 function backfill(ids, loud){
@@ -943,6 +946,103 @@ $("restoreFile").addEventListener("change", function(){
   r.readAsText(f); this.value = "";
 });
 
+
+/* ---------- Molnkopia i ett privat GitHub-repo ---------- */
+var SK = "gh2-sync", TK = "gh2-tomb";
+var sync = load(SK, null), tomb = load(TK, {}), ss = { running: false, dirty: false, timer: null, status: "" };
+function ghOwner(){ var m = location.hostname.match(/^([^.]+)\.github\.io$/i); return m ? m[1] : "Ralsen90"; }
+function b64enc(str){ return btoa(unescape(encodeURIComponent(str))); }
+function b64dec(b){ return decodeURIComponent(escape(atob(String(b).replace(/\s/g, "")))); }
+function gh(path, opt){
+  opt = opt || {};
+  return fetch("https://api.github.com/repos/" + sync.owner + "/" + sync.repo + path, {
+    method: opt.method || "GET", cache: "no-store",
+    headers: { "Authorization": "Bearer " + sync.token, "Accept": "application/vnd.github+json" },
+    body: opt.body ? JSON.stringify(opt.body) : undefined
+  }).then(function(r){
+    if (r.status === 404 && !opt.method) return null;
+    if (!r.ok){ var e = new Error("HTTP " + r.status); e.status = r.status; throw e; }
+    return r.json();
+  });
+}
+function pullRemote(){
+  return gh("/contents/data.json").then(function(f){
+    if (!f) return { sha: null, data: null };
+    var p = f.content ? Promise.resolve(f.content) : gh("/git/blobs/" + f.sha).then(function(b){ return b.content; });
+    return p.then(function(c){ return { sha: f.sha, data: JSON.parse(b64dec(c)) }; });
+  });
+}
+function stamp(p){ return p.updatedAt || p.createdAt || 0; }
+function mergeRemote(remote){
+  var changed = false, map = {};
+  var rt = (remote && remote.borttagna) || {};
+  for (var k in rt) if (!tomb[k] || tomb[k] < rt[k]) tomb[k] = rt[k];
+  sessions.forEach(function(p){ map[p.id] = p; });
+  ((remote && remote.pass) || []).forEach(function(r){
+    var l = map[r.id];
+    if (!l || stamp(r) > stamp(l) || (stamp(r) === stamp(l) && r.auto && !l.auto)){ map[r.id] = r; changed = true; }
+  });
+  Object.keys(tomb).forEach(function(id){ if (map[id] && stamp(map[id]) <= tomb[id]){ delete map[id]; changed = true; } });
+  sessions = Object.keys(map).map(function(k){ return map[k]; });
+  save(TK, tomb);
+  return changed;
+}
+function payload(){ return { pass: cleanList().sort(function(a, b){ return a.id < b.id ? -1 : 1; }), borttagna: tomb }; }
+function setSync(t){ ss.status = t; renderSync(); }
+function scheduleSync(){ if (!sync) return; clearTimeout(ss.timer); ss.timer = setTimeout(syncNow, 2500); }
+function syncNow(){
+  if (!sync) return;
+  if (ss.running){ ss.dirty = true; return; }
+  ss.running = true; ss.dirty = false; setSync("Synkar…");
+  pullRemote().then(function(r){
+    if (mergeRemote(r.data)){ save(K.pass, cleanList()); renderMeasures(); renderScan(); renderBook(); if (!$("analys").hidden) renderAnalys(); }
+    var mine = payload(), remoteSame = r.data && JSON.stringify({ pass: (r.data.pass || []).slice().sort(function(a, b){ return a.id < b.id ? -1 : 1; }), borttagna: r.data.borttagna || {} }) === JSON.stringify(mine);
+    if (remoteSame) return;
+    mine.version = 2; mine.uppdaterad = new Date().toISOString();
+    var body = { message: "Fiskelogg " + dstr(Date.now()) + " " + hm(Date.now()), content: b64enc(JSON.stringify(mine, null, 1)) };
+    if (r.sha) body.sha = r.sha;
+    return gh("/contents/data.json", { method: "PUT", body: body });
+  }).then(function(){
+    sync.last = Date.now(); save(SK, sync); setSync("Sparad i molnet " + hm(Date.now()));
+  }).catch(function(e){
+    if (e.status === 401) setSync("Nyckeln fungerar inte längre. Skapa en ny och anslut igen.");
+    else if (e.status === 403) setSync("Nyckeln saknar skrivrätt till repot.");
+    else if (e.status === 409 || e.status === 422){ ss.dirty = true; setSync("Krock, försöker igen…"); }
+    else setSync("Kunde inte nå GitHub. Sparas när du har nät igen.");
+  }).then(function(){ ss.running = false; if (ss.dirty) setTimeout(syncNow, 3000); });
+}
+function renderSync(){
+  var el = $("syncBox"); if (!el) return;
+  if (!sync){
+    el.innerHTML = '<p class="muted">Inte ansluten. Loggen finns bara i den här telefonen.</p>' +
+      '<div class="f"><label for="s_repo">Privat repo</label><input id="s_repo" value="fiske-data" autocapitalize="off" autocorrect="off"></div>' +
+      '<div class="f" style="margin-top:10px"><label for="s_token">Nyckel</label><input id="s_token" type="password" placeholder="github_pat_…" autocapitalize="off" autocorrect="off"></div>' +
+      '<div class="row" style="margin-top:10px"><button class="btn primary small" id="s_connect">Anslut</button></div>';
+    $("s_connect").addEventListener("click", connectSync);
+    return;
+  }
+  el.innerHTML = '<p><b>' + esc(sync.owner + "/" + sync.repo) + '</b></p><p class="muted">' + esc(ss.status || (sync.last ? "Senast sparad " + ago(sync.last) : "")) + '</p>' +
+    '<div class="row"><button class="btn small" id="s_now">Synka nu</button><button class="btn small" id="s_off">Koppla från</button></div>';
+  $("s_now").addEventListener("click", syncNow);
+  $("s_off").addEventListener("click", function(){ if (!confirm("Koppla från molnkopian? Loggen ligger kvar både här och på GitHub.")) return; sync = null; localStorage.removeItem(SK); renderSync(); });
+}
+function connectSync(){
+  var repo = $("s_repo").value.trim().replace(/^.*\//, ""), token = $("s_token").value.trim();
+  if (!repo || !token){ toast("Fyll i repo och nyckel"); return; }
+  sync = { owner: ghOwner(), repo: repo, token: token };
+  $("s_connect").disabled = true;
+  gh("").then(function(info){
+    if (!info) throw { status: 404 };
+    if (!info.private){ sync = null; toast("Repot är publikt. Gör det privat först, annars kan alla läsa loggen."); renderSync(); return; }
+    save(SK, sync); setSync("Ansluten"); syncNow();
+  }).catch(function(e){
+    sync = null; renderSync();
+    toast(e && e.status === 404 ? "Hittar inte repot. Kolla namnet och att nyckeln har åtkomst till det." : e && e.status === 401 ? "Nyckeln godtogs inte. Kolla att du kopierat hela." : "Kunde inte nå GitHub");
+  });
+}
+window.addEventListener("online", function(){ if (sync) syncNow(); });
+document.addEventListener("visibilitychange", function(){ if (!document.hidden && sync && (!sync.last || Date.now() - sync.last > 5*60e3)) syncNow(); });
+
 /* ---------- Flytt från gamla formatet ---------- */
 function migrate(o){
   if (!o || o.start) return o;
@@ -956,7 +1056,7 @@ function migrate(o){
     bete: "", modell: "", farg: "", vikt: null, riggText: o.rigg || "", hugg: hugg, analys: o.analys || "", matnotering: o.matnotering || "", vader: o.ljusvader || "",
     manuellt: { niva: num(o.vattenstand), flode: num(o.flode), tryck: num(o.tryck), tryckTrend: o.trycktrend || null, vtemp: num(o.vattentemp) }, createdAt: Date.now() };
 }
-var SEED = ([{"id": "p20260920-0900", "start": 0, "end": 0, "_s": "2026-09-20T09:00", "_e": "2026-09-20T11:00", "plats": "Gåsahalsen, ytterkurvan", "sikt": 60, "strom": "Svagt utgående", "stromText": "Långsamt utåt, uppdämt", "bete": "Shad", "modell": "Hit Shad 8 cm / Pro Grub 6,5 cm", "farg": "Motoroil", "vikt": 7, "riggText": "Hit Shad 8 cm / Pro Grub 6,5 cm (Motoroil), 7 g jiggskalle, 0,30 FC (1 m) / 0,10 flätlina", "hugg": [{"t": null, "utfall": "Landad", "art": "Gädda"}, {"t": null, "utfall": "Tappad", "art": ""}], "analys": "Högt havsvattenstånd dämde ån och fyllde vasskanten. Fallande tryck och dämpat ljus triggade aktivitet i droppet. Avskuren 0,10-lina mot bottensten kräver direkt spölyft och stenhård press i mothugget.", "matnotering": "Vattenstånd +50 till +60 cm (stigande, topp +87). Gäddan i vasskanten, tappad fisk i djuphålan.", "vader": "Mulet, regnstänk, SV 3–5 m/s", "manuellt": {"niva": 55, "flode": 6.5, "tryck": 1010, "tryckTrend": "Fallande", "vtemp": 15}}, {"id": "p20260925-1000", "start": 0, "end": 0, "_s": "2026-09-25T10:00", "_e": "2026-09-25T13:00", "plats": "Gåsahalsen, tvärs över ån", "sikt": 70, "strom": "Stilla", "stromText": "Mycket svagt / nära stilla", "bete": "Shad", "modell": "Hit Shad 8 cm / Westin CreCraw 8,5 cm", "farg": "", "vikt": 7, "riggText": "Hit Shad 8 cm / Westin CreCraw 8,5 cm, Westin offset 7 g, 0,30 FC / 0,10 flätlina", "hugg": [], "analys": "Lågt havsvattenstånd dränerade ån (ca 40 cm lägre än 20/9). Vassarna torrlagda, fisken borttvingad från kanterna och parkerad passiv i hålan under lunchsol och stabilt högtryck. 7 g gav snabb duns i stilla vatten.", "matnotering": "Vattenstånd +10 till +15 cm (sjunkande, lågvatten +12).", "vader": "Halvklart/sol, svag vind 2–3 m/s", "manuellt": {"niva": 12.5, "flode": 5.5, "tryck": 1017, "tryckTrend": "Stabilt", "vtemp": 14}}]).map(function(s){ s.start = new Date(s._s).getTime(); s.end = new Date(s._e).getTime(); delete s._s; delete s._e; s.createdAt = Date.now(); return s; });
+var SEED = ([{"id": "p20260920-0900", "start": 0, "end": 0, "_s": "2026-09-20T09:00", "_e": "2026-09-20T11:00", "plats": "Gåsahalsen, ytterkurvan", "sikt": 60, "strom": "Svagt utgående", "stromText": "Långsamt utåt, uppdämt", "bete": "Shad", "modell": "Hit Shad 8 cm / Pro Grub 6,5 cm", "farg": "Motoroil", "vikt": 7, "riggText": "Hit Shad 8 cm / Pro Grub 6,5 cm (Motoroil), 7 g jiggskalle, 0,30 FC (1 m) / 0,10 flätlina", "hugg": [{"t": null, "utfall": "Landad", "art": "Gädda"}, {"t": null, "utfall": "Tappad", "art": ""}], "analys": "Högt havsvattenstånd dämde ån och fyllde vasskanten. Fallande tryck och dämpat ljus triggade aktivitet i droppet. Avskuren 0,10-lina mot bottensten kräver direkt spölyft och stenhård press i mothugget.", "matnotering": "Vattenstånd +50 till +60 cm (stigande, topp +87). Gäddan i vasskanten, tappad fisk i djuphålan.", "vader": "Mulet, regnstänk, SV 3–5 m/s", "manuellt": {"niva": 55, "flode": 6.5, "tryck": 1010, "tryckTrend": "Fallande", "vtemp": 15}}, {"id": "p20260925-1000", "start": 0, "end": 0, "_s": "2026-09-25T10:00", "_e": "2026-09-25T13:00", "plats": "Gåsahalsen, tvärs över ån", "sikt": 70, "strom": "Stilla", "stromText": "Mycket svagt / nära stilla", "bete": "Shad", "modell": "Hit Shad 8 cm / Westin CreCraw 8,5 cm", "farg": "", "vikt": 7, "riggText": "Hit Shad 8 cm / Westin CreCraw 8,5 cm, Westin offset 7 g, 0,30 FC / 0,10 flätlina", "hugg": [], "analys": "Lågt havsvattenstånd dränerade ån (ca 40 cm lägre än 20/9). Vassarna torrlagda, fisken borttvingad från kanterna och parkerad passiv i hålan under lunchsol och stabilt högtryck. 7 g gav snabb duns i stilla vatten.", "matnotering": "Vattenstånd +10 till +15 cm (sjunkande, lågvatten +12).", "vader": "Halvklart/sol, svag vind 2–3 m/s", "manuellt": {"niva": 12.5, "flode": 5.5, "tryck": 1017, "tryckTrend": "Stabilt", "vtemp": 14}}]).map(function(s){ s.start = new Date(s._s).getTime(); s.end = new Date(s._e).getTime(); delete s._s; delete s._e; s.createdAt = Date.parse("2026-09-25T12:00:00Z"); return s; });
 
 /* ---------- Flikar och start ---------- */
 function showTab(name){
@@ -967,7 +1067,8 @@ function showTab(name){
 }
 document.querySelectorAll("nav button").forEach(function(b){ b.addEventListener("click", function(){ showTab(b.dataset.tab); }); });
 $("fetchBtn").addEventListener("click", fetchLage);
-function persist(){ var clean = sessions.map(function(p){ var c = Object.assign({}, p); delete c._hamtar; return c; }); if (!save(K.pass, clean)) toast("Kunde inte spara, lagringen är full"); renderAll(); }
+function cleanList(){ return sessions.map(function(p){ var c = Object.assign({}, p); delete c._hamtar; return c; }); }
+function persist(){ if (!save(K.pass, cleanList())) toast("Kunde inte spara, lagringen är full"); renderAll(); scheduleSync(); }
 function renderAll(){ renderMeasures(); renderScan(); renderBook(); renderPass(); if (!$("analys").hidden) renderAnalys(); }
 
 sessions = load(K.pass, null);
@@ -978,7 +1079,7 @@ if (!sessions){
   save(K.pass, sessions);
 }
 lage = load(K.lage, null); forecast = load(K.prog, null); aktiv = load(K.aktiv, null);
-renderBand(); renderAll();
+renderBand(); renderAll(); renderSync(); if (sync) setTimeout(syncNow, 1500);
 setInterval(function(){ renderBand(); if (aktiv) renderPass(); }, 30000);
 setInterval(renderScan, 5*60e3);
 if (!lage || Date.now() - lage.hamtat > 30*60e3) fetchLage();
