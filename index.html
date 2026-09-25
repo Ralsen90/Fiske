@@ -13,8 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-:root{
+<style>:root{
   --bg:#E4EAE6; --paper:#F4F7F4; --ink:#13303A; --muted:#58696C; --line:#C9D3CF;
   --reed:#56723A; --water:#2F6F86; --fly:#C95A17; --night:#1B3440; --twi:#7C93A0; --day:#E9D9A6;
   --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
@@ -43,7 +42,7 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(44px,12vw,72px);li
 .clock{font-family:var(--display);font-weight:600;font-size:34px;line-height:1;text-align:right}
 .clock small{display:block;font-family:var(--body);font-weight:500;font-size:13px;color:var(--muted);margin-top:4px}
 nav{display:flex;gap:4px;margin:16px 0 20px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:4px}
-nav button{flex:1;font:600 17px var(--display);letter-spacing:.02em;padding:10px 6px;border:0;border-radius:7px;background:transparent;color:var(--muted);cursor:pointer}
+nav button{flex:1;font:600 16px var(--display);letter-spacing:.02em;padding:10px 6px;border:0;border-radius:7px;background:transparent;color:var(--muted);cursor:pointer}
 nav button[aria-selected="true"]{background:var(--ink);color:var(--paper)}
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid var(--water);outline-offset:2px}
 section[hidden]{display:none}
@@ -139,6 +138,34 @@ small.u{font-size:16px;font-weight:600}
 .fetchrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0 10px}
 .backup{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 10px}
 .filebtn input{display:none}
+
+h3{font-family:var(--display);font-weight:600;font-size:20px;margin:22px 0 4px}
+.fact .src{display:block;font-size:12px;color:var(--muted);opacity:.85}
+small.u{font-size:16px;font-weight:600}
+.small{font-size:14px}
+.hit{color:var(--fly);font-weight:600}
+.wins{margin-top:10px}
+.note{margin-top:10px}
+.warn{border-left:3px solid var(--fly);padding-left:10px}
+.fetchrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0 10px}
+.backup{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 10px}
+.filebtn input{display:none}
+.bigrow{display:grid;gap:10px}
+.hugg-btn{width:100%;min-height:120px;font:700 44px var(--display);letter-spacing:.02em;border:0;border-radius:14px;background:var(--fly);color:#fff;cursor:pointer;margin:14px 0}
+.hugg-btn:active{transform:scale(.98)}
+.timer{font-family:var(--display);font-weight:600;font-size:26px}
+.hrow{display:grid;grid-template-columns:auto 1fr 1fr auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+#aktivHugg .hrow{grid-template-columns:auto 1fr 1fr}
+.hrow .ht{font-family:var(--display);font-weight:600;font-size:20px;min-width:52px}
+.hrow input[type=time]{min-width:96px}
+.x{border:0;background:transparent;color:var(--muted);font-size:26px;width:40px;height:40px;cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}
+.chips span{font-size:14px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+.hlist{margin:0 0 12px;padding-left:18px}
+.hlist li{margin-bottom:4px}
+.autobox{grid-column:1/-1;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.autobox .row{margin-top:6px}
+.stats div span{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -149,8 +176,9 @@ small.u{font-size:16px;font-weight:600}
   </header>
   <nav role="tablist">
     <button role="tab" aria-selected="true" data-tab="lage">Läget</button>
-    <button role="tab" aria-selected="false" data-tab="logga">Logga pass</button>
+    <button role="tab" aria-selected="false" data-tab="pass" id="tabPass">Pass</button>
     <button role="tab" aria-selected="false" data-tab="bok">Loggbok</button>
+    <button role="tab" aria-selected="false" data-tab="analys">Analys</button>
   </nav>
 
   <section id="lage">
@@ -158,100 +186,108 @@ small.u{font-size:16px;font-weight:600}
     <div class="band-labels"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div>
     <div class="lightnow" id="lightnow"></div>
     <div class="facts" id="sunfacts"></div>
-
     <h2>Mätvärden</h2>
-    <div class="fetchrow"><button class="btn primary" id="fetchBtn">Hämta läget</button></div>
+    <div class="fetchrow"><button class="btn primary" id="fetchBtn">Hämta läget</button><button class="btn" id="startLage">Starta pass</button></div>
     <div id="measures"></div>
-
     <h2>Nästa bästa lucka</h2>
     <div id="scan"></div>
-
-    <h2>Liknande pass i din logg</h2>
-    <div id="similar"></div>
-
-    <div class="row" style="margin-top:22px"><button class="btn" id="startLog">Logga ett pass nu</button></div>
   </section>
 
-  <section id="logga" hidden>
-    <h2 id="formTitle">Nytt pass</h2>
-    <form id="form" autocomplete="off">
-      <div class="f"><label for="when">Datum &amp; tid</label><input type="datetime-local" id="when" required></div>
-      <div class="f"><label for="plats">Plats / vinkel</label><input id="plats" list="platsList"></div>
-      <div class="f"><label for="sikt">Sikt <em>(cm)</em></label><input id="sikt" inputmode="decimal"></div>
-      <div class="f"><label for="flode">Flöde <em>(m³/s)</em></label><input id="flode" inputmode="decimal"></div>
-      <div class="f"><label for="vattenstand">Vattenstånd <em>(cm, Viken)</em></label><input id="vattenstand" inputmode="decimal"></div>
-      <div class="f"><label for="strom">Strömdrag / riktning</label><input id="strom" list="stromList"></div>
-      <div class="f"><label for="vattentemp">Vattentemp <em>(°C)</em></label><input id="vattentemp" inputmode="decimal"></div>
-      <div class="f"><label for="tryck">Lufttryck &amp; trend <em>(hPa)</em></label>
-        <div class="split"><input id="tryck" inputmode="decimal" aria-label="Lufttryck i hPa">
-          <select id="trycktrend" aria-label="Trend"><option value="">Trend</option><option>Stigande</option><option>Stabilt</option><option>Fallande</option></select></div></div>
-      <div class="f full"><label for="ljusvader">Ljus &amp; väder</label><input id="ljusvader" list="ljusList"></div>
-      <div class="f full"><label for="rigg">Rigg / bete / teknik</label><input id="rigg"></div>
-      <div class="f"><label for="hugg">Hugg <em>(antal)</em></label><input id="hugg" type="number" min="0" inputmode="numeric"></div>
-      <div class="f"><label for="art">Art</label><input id="art" list="artList" placeholder="t.ex. Gädda"></div>
-      <div class="f full"><label for="analys">Analys &amp; notering</label><textarea id="analys"></textarea></div>
-      <div class="formbar">
-        <button class="btn primary" type="submit" id="saveBtn">Spara pass</button>
-        <button class="btn" type="button" id="fillBtn">Fyll i senaste mätvärden</button>
-        <button class="btn" type="button" id="cancelEdit" hidden>Avbryt ändring</button>
+  <section id="pass" hidden>
+    <div id="startBox">
+      <h2>Pass</h2>
+      <div class="bigrow">
+        <button class="btn primary" id="startNow">Starta pass nu</button>
+        <button class="btn" id="efterhand">Logga ett pass i efterhand</button>
       </div>
-    </form>
-    <datalist id="platsList"><option>Gåsahalsen</option><option>Gåsahalsen (ytterkurva, vass mot håla)</option><option>Gåsahalsen (kast tvärs över ån)</option><option>Mynningen</option></datalist>
-    <datalist id="stromList"><option>Utgående (mot havet)</option><option>Ingående (från havet)</option><option>Långsamt utåt, uppdämt</option><option>Mycket svagt / nära stilla</option><option>Kraftigt utgående</option></datalist>
-    <datalist id="ljusList"><option>Gryning</option><option>Morgonljus</option><option>Mulet</option><option>Halvklart/sol</option><option>Kvällsljus</option><option>Skymning</option><option>Regn</option></datalist>
-    <datalist id="artList"><option>Gädda</option><option>Havsöring</option><option>Abborre</option><option>Lax</option><option>Id</option><option>Horngädda</option></datalist>
+      <p class="muted" style="margin-top:12px">Starta när du börjar fiska och tryck Hugg! när det händer. Allt som går att mäta hämtas automatiskt för tiden du fiskade.</p>
+    </div>
+    <div id="aktivBox" hidden>
+      <h2>Pågående pass</h2>
+      <div class="timer" id="aktivStart"></div>
+      <button class="hugg-btn" id="huggBtn">Hugg!</button>
+      <div id="aktivHugg"></div>
+      <div class="row" style="margin-top:16px"><button class="btn primary" id="endBtn">Avsluta pass</button><button class="btn" id="cancelAktiv">Avbryt</button></div>
+    </div>
+    <div id="formBox" hidden>
+      <h2 id="formTitle">Spara pass</h2>
+      <form id="passForm" autocomplete="off">
+        <div class="f"><label for="f_start">Start</label><input type="datetime-local" id="f_start" required></div>
+        <div class="f"><label for="f_end">Slut</label><input type="datetime-local" id="f_end" required></div>
+        <div class="f full"><label for="f_plats">Plats</label><select id="f_plats"></select></div>
+        <div class="f"><label for="f_sikt">Sikt <em>(cm)</em></label><input id="f_sikt" inputmode="decimal"></div>
+        <div class="f"><label for="f_strom">Strömdrag</label><select id="f_strom"></select></div>
+        <div class="f"><label for="f_bete">Bete</label><select id="f_bete"></select></div>
+        <div class="f"><label for="f_farg">Färg</label><select id="f_farg"></select></div>
+        <div class="f"><label for="f_modell">Modell</label><input id="f_modell" list="modellList" placeholder="t.ex. Hit Shad 8 cm"></div>
+        <div class="f"><label for="f_vikt">Vikt <em>(g)</em></label><input id="f_vikt" inputmode="decimal"></div>
+        <div class="f full"><label>Hugg</label><div id="f_hugg"></div><div class="row" style="margin-top:6px"><button type="button" class="btn small" id="addHugg">Lägg till hugg</button></div></div>
+        <div class="f full"><label for="f_analys">Analys &amp; notering</label><textarea id="f_analys"></textarea></div>
+        <div class="autobox"><label>Mätdata för passet</label><div id="f_auto"></div><div class="row"><button type="button" class="btn small" id="refetch">Hämta nu</button></div></div>
+        <div id="f_old" style="grid-column:1/-1"></div>
+        <div class="formbar"><button class="btn primary" type="submit">Spara pass</button><button class="btn" type="button" id="cancelForm">Avbryt</button></div>
+      </form>
+      <datalist id="modellList"></datalist>
+    </div>
   </section>
 
   <section id="bok" hidden>
     <div class="stats" id="stats"></div>
-    <div id="breakdown"></div>
     <div id="list"></div>
     <h2>Spara och flytta</h2>
-    <p class="muted">Passen sparas i den här webbläsaren. Ta en säkerhetskopia då och då, och använd den för att flytta passen till en annan enhet.</p>
+    <p class="muted">Passen sparas i den här webbläsaren. Ta en säkerhetskopia då och då.</p>
     <div class="backup">
       <button class="btn small" id="backupBtn">Spara säkerhetskopia</button>
       <label class="btn small filebtn">Läs in säkerhetskopia<input type="file" id="restoreFile" accept=".json,application/json"></label>
       <button class="btn small" id="exportBtn">Exportera CSV</button>
     </div>
-    <details class="imp">
-      <summary>Klistra in rader från ditt kalkylark</summary>
-      <p class="muted">Markera raderna i Excel eller Sheets, samma kolumnordning som din mall, och klistra in här.</p>
-      <textarea id="importText" rows="6"></textarea>
-      <div class="row" style="margin-top:10px"><button class="btn" id="importBtn">Importera</button><span class="note" id="importNote"></span></div>
-    </details>
+  </section>
+
+  <section id="analys" hidden>
+    <h2>Röda tråden</h2>
+    <div id="analysBody"></div>
   </section>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
 (function(){
 "use strict";
-var LAT = 56.249, LNG = 12.853;            // Gåsahalsen
-var SEA_LAT = 56.27, SEA_LNG = 12.78;      // Skälderviken, för havsmodellen
-var K = { pass: "gh-pass", lage: "gh-lage", prog: "gh-prognos", stn: "gh-stn" };
+var LAT = 56.249, LNG = 12.853, SEA_LAT = 56.27, SEA_LNG = 12.78, FLOW_POINT = 554;
+var H = 36e5, DAY = 864e5;
+var K = { pass: "gh2-pass", old: "gh-pass", lage: "gh2-lage", prog: "gh2-prognos", stn: "gh2-stn", aktiv: "gh2-aktiv", platser: "gh2-platser" };
 var SMHI = {
   met: "https://opendata-download-metobs.smhi.se/api/version/1.0",
   hyd: "https://opendata-download-hydroobs.smhi.se/api/version/1.0",
   oc: "https://opendata-download-ocobs.smhi.se/api/version/1.0"
 };
-var sessions = [], latest = null, forecast = null, editingId = null, busy = false;
+var sessions = [], lage = null, forecast = null, aktiv = null, editing = null, busy = false, form = null;
 
+/* ---------- Hjälpfunktioner ---------- */
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]; }); }
 function num(v){ if (v == null || v === "") return null; var n = parseFloat(String(v).replace(",", ".").replace(/[^\d.\-]/g, "")); return isFinite(n) ? n : null; }
 function pad(n){ return (n < 10 ? "0" : "") + n; }
-function hm(d){ return d && !isNaN(d) ? pad(d.getHours()) + ":" + pad(d.getMinutes()) : "–"; }
-function localIso(d){ return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()) + "T" + pad(d.getHours()) + ":" + pad(d.getMinutes()); }
-function fmtNum(v, dec){ if (v == null || v === "") return "–"; var n = num(v); if (n == null) return esc(v); return n.toLocaleString("sv-SE", {maximumFractionDigits: dec == null ? 1 : dec}); }
-function toast(msg){ var t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast._t); toast._t = setTimeout(function(){ t.classList.remove("show"); }, 2400); }
+function hm(d){ d = d instanceof Date ? d : new Date(d); return !isNaN(d) ? pad(d.getHours()) + ":" + pad(d.getMinutes()) : "–"; }
+function localIso(d){ d = new Date(d); return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()) + "T" + pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+function dstr(ms){ var d = new Date(ms); return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()); }
+function fmt(v, dec){ var n = num(v); if (n == null) return "–"; return n.toLocaleString("sv-SE", { maximumFractionDigits: dec == null ? 1 : dec }); }
+function sign(v, dec){ var n = num(v); if (n == null) return "–"; return (n > 0 ? "+" : "") + fmt(n, dec); }
+function toast(msg){ var t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast._t); toast._t = setTimeout(function(){ t.classList.remove("show"); }, 2600); }
 function load(k, def){ try { var r = localStorage.getItem(k); return r ? JSON.parse(r) : def; } catch(e){ return def; } }
 function save(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch(e){ return false; } }
+function ago(t){ if (!t) return ""; var m = Math.round((Date.now() - t)/60000); return m < 60 ? m + " min sedan" : m < 48*60 ? Math.round(m/60) + " h sedan" : Math.round(m/1440) + " dygn sedan"; }
+function dur(ms){ var m = Math.round(ms/60000); return Math.floor(m/60) + " h " + pad(m % 60) + " min"; }
+function dateLong(t){ return new Date(t).toLocaleDateString("sv-SE", { weekday: "short", day: "numeric", month: "short" }); }
+function newId(){ return "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
 /* ---------- Sol och måne (efter SunCalc, V. Agafonkin) ---------- */
-var rad = Math.PI/180, dayMs = 864e5, J1970 = 2440588, J2000 = 2451545, ecl = rad*23.4397;
-function toJulian(d){ return d.valueOf()/dayMs - 0.5 + J1970; }
-function fromJulian(j){ return new Date((j + 0.5 - J1970) * dayMs); }
+var rad = Math.PI/180, J1970 = 2440588, J2000 = 2451545, ecl = rad*23.4397;
+function toJulian(d){ return d.valueOf()/DAY - 0.5 + J1970; }
+function fromJulian(j){ return new Date((j + 0.5 - J1970) * DAY); }
+var sunCache = {};
 function sunTimes(date){
-  var lw = rad*-LNG, phi = rad*LAT, d = toJulian(date) - J2000;
+  var key = dstr(date); if (sunCache[key]) return sunCache[key];
+  var lw = rad*-LNG, phi = rad*LAT, d = toJulian(new Date(date)) - J2000;
   var n = Math.round(d - 0.0009 - lw/(2*Math.PI)), ds = 0.0009 + lw/(2*Math.PI) + n;
   var M = rad*(357.5291 + 0.98560028*ds);
   var L = M + rad*(1.9148*Math.sin(M) + 0.02*Math.sin(2*M) + 0.0003*Math.sin(3*M)) + rad*102.9372 + Math.PI;
@@ -265,195 +301,314 @@ function sunTimes(date){
     return [fromJulian(Jnoon - (Js - Jnoon)), fromJulian(Js)];
   }
   var s = pair(-0.833), c = pair(-6);
-  return { rise: s[0], set: s[1], dawn: c[0], dusk: c[1] };
+  return (sunCache[key] = { rise: s[0], set: s[1], dawn: c[0], dusk: c[1] });
 }
 function moon(date){
-  var syn = 29.530588853, age = (((date - Date.UTC(2000,0,6,18,14))/dayMs) % syn + syn) % syn;
+  var syn = 29.530588853, age = (((date - Date.UTC(2000,0,6,18,14))/DAY) % syn + syn) % syn;
   var illum = Math.round((1 - Math.cos(2*Math.PI*age/syn))/2*100);
   var name = age < 1.85 ? "Nymåne" : age < 5.54 ? "Tilltagande skära" : age < 9.23 ? "Första kvarteret" : age < 12.92 ? "Tilltagande" :
              age < 16.61 ? "Fullmåne" : age < 20.30 ? "Avtagande" : age < 23.99 ? "Sista kvarteret" : age < 27.68 ? "Avtagande skära" : "Nymåne";
   return { name: name, illum: illum };
 }
-function lightPhase(d, t){
-  if (!t.rise || !t.set) return { label: "–", note: "" };
-  var h = 36e5, x = d.getTime();
-  if (t.dawn && x >= t.dawn && x < t.rise) return { label: "Gryning", note: "låg ljusnivå" };
-  if (x >= t.rise && x < t.rise.getTime() + 1.5*h) return { label: "Morgonljus", note: "första timmarna efter soluppgång" };
-  if (x >= t.set.getTime() - 1.5*h && x < t.set) return { label: "Kvällsljus", note: "sista timmarna före solnedgång" };
-  if (t.dusk && x >= t.set && x < t.dusk) return { label: "Skymning", note: "låg ljusnivå" };
-  if (x >= t.rise && x < t.set) return { label: "Dagsljus", note: "" };
-  return { label: "Mörker", note: "" };
+function ljusAt(t){
+  var d = new Date(t), s = sunTimes(d);
+  if (!s.rise || !s.set) return null;
+  var x = d.getTime();
+  if (s.dawn && x >= s.dawn && x < s.rise) return "Gryning";
+  if (x >= s.rise && x < s.rise.getTime() + 1.5*H) return "Morgonljus";
+  if (x >= s.set.getTime() - 1.5*H && x < s.set) return "Kvällsljus";
+  if (s.dusk && x >= s.set && x < s.dusk) return "Skymning";
+  if (x >= s.rise && x < s.set) return "Dagsljus";
+  return "Mörker";
 }
 
-/* ---------- SMHI + prognos ---------- */
-function getJSON(u){
-  return fetch(u, { cache: "no-store" }).then(function(r){ if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
+/* ---------- Datakällor ---------- */
+var memo = {};
+function getJSON(u, keep){
+  if (keep && memo[u]) return memo[u];
+  var p = fetch(u, { cache: "no-store" }).then(function(r){ if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
+  if (keep){ memo[u] = p; p.catch(function(){ delete memo[u]; }); }
+  return p;
 }
 function km(a, b, c, d){ var x = (d - b)*rad*Math.cos((a + c)/2*rad), y = (c - a)*rad; return Math.sqrt(x*x + y*y)*6371; }
-function values(d){
+function valuesOf(d){
   var arr = (d && (d.value || d.values)) || [];
   return arr.map(function(v){ return { t: +v.date, v: num(v.value) }; }).filter(function(v){ return v.v != null && isFinite(v.t); }).sort(function(a, b){ return a.t - b.t; });
 }
-function lastAndBefore(vals, hours){
-  if (!vals.length) return null;
-  var last = vals[vals.length - 1], target = last.t - hours*36e5, prev = null, bd = Infinity;
-  vals.forEach(function(v){ var dd = Math.abs(v.t - target); if (dd < bd){ bd = dd; prev = v; } });
-  return { last: last, prev: bd <= 1.5*36e5 ? prev : null };
+function at(series, t, maxH){
+  if (!series || !series.length) return null;
+  var lo = 0, hi = series.length - 1;
+  while (hi - lo > 1){ var mid = (lo + hi) >> 1; if (series[mid].t < t) lo = mid; else hi = mid; }
+  var best = Math.abs(series[lo].t - t) <= Math.abs(series[hi].t - t) ? series[lo] : series[hi];
+  return Math.abs(best.t - t) <= maxH*H ? best.v : null;
 }
-function stationData(base, param, id){
-  return getJSON(base + "/parameter/" + param + "/station/" + id + "/period/latest-day/data.json")
-    .then(function(d){ var v = values(d); if (!v.length) throw new Error("tomt"); return v; })
-    .catch(function(){ return getJSON(base + "/parameter/" + param + "/station/" + id + "/period/latest-months/data.json").then(values); });
+function trend(series, t, hours, thr, labels, maxH){
+  var a = at(series, t, maxH || 1.5), b = at(series, t - hours*H, maxH || 1.5);
+  if (a == null || b == null) return null;
+  var d = a - b; return d > thr ? labels[0] : d < -thr ? labels[2] : labels[1];
 }
-function stationList(base, param){ return getJSON(base + "/parameter/" + param + ".json").then(function(p){ return { unit: p.unit || "", list: p.station || [] }; }); }
+function stationList(base, param){ return getJSON(base + "/parameter/" + param + ".json", true).then(function(p){ return { unit: p.unit || "", list: p.station || [] }; }); }
 function nearestActive(list, lat, lng, maxKm){
   var best = null, bd = Infinity;
   list.forEach(function(s){ if (!s.active) return; var d = km(lat, lng, s.latitude, s.longitude); if (d < bd && (!maxKm || d <= maxKm)){ bd = d; best = s; } });
   return best;
 }
-// Väljer station och cachar valet en vecka, så appen inte laddar stationslistor varje gång
 function station(key, finder){
   var cache = load(K.stn, {}), c = cache[key];
-  if (c && Date.now() - c.at < 7*dayMs) return Promise.resolve(c);
+  if (c && Date.now() - c.at < 7*DAY) return Promise.resolve(c);
   return finder().then(function(s){ if (!s) throw new Error("ingen station"); s.at = Date.now(); cache[key] = s; save(K.stn, cache); return s; });
 }
 function forget(key){ var c = load(K.stn, {}); delete c[key]; save(K.stn, c); }
-
-// Flöde vid mynningen: SMHI:s modellpunkt 554 i Vattenwebb (hydronu).
-// Vattenwebb tillåter troligen inte anrop direkt från webbläsaren, så en GitHub Action
-// i samma repo hämtar punkten varje timme och sparar den som flode.json.
-var FLOW_POINT = 554;
-function repoRaw(){
-  var h = location.hostname, m = h.match(/^([^.]+)\.github\.io$/i), repo = (location.pathname.split("/")[1] || "");
-  var owner = m ? m[1] : "Ralsen90"; if (!m || !repo) repo = "Fiske";
-  return "https://raw.githubusercontent.com/" + owner + "/" + repo + "/main/flode.json";
+function stationSeries(base, param, id, start){
+  var per = start > Date.now() - 20*H ? "latest-day" : "latest-months";
+  function get(p){ return getJSON(base + "/parameter/" + param + "/station/" + id + "/period/" + p + "/data.json", true).then(valuesOf); }
+  return get(per).then(function(v){ return (!v.length && per === "latest-day") ? get("latest-months") : v; })
+    .catch(function(e){ if (per === "latest-day") return get("latest-months"); throw e; });
 }
-function pointToFlow(d){
-  var c = d.chartData || d, hind = (c.coutHindcast && c.coutHindcast.data) || c.hindcast || [], fc = (c.coutForecast && c.coutForecast.data) || c.forecast || [];
-  var series = hind.concat(fc).map(function(r){ return { t: +r[0], v: num(r[1]) }; }).filter(function(r){ return r.v != null; }).sort(function(a, b){ return a.t - b.t; });
-  if (!series.length) throw new Error("tomt");
-  var now = Date.now(), cur = null, prev = null, ahead = null;
-  series.forEach(function(r){ if (r.t <= now) cur = r; });
-  if (!cur) cur = series[0];
-  series.forEach(function(r){ if (r.t <= cur.t - 20*36e5) prev = r; if (!ahead && r.t >= cur.t + 3*dayMs - 12*36e5) ahead = r; });
-  var d1 = prev ? cur.v - prev.v : null;
-  return { flode: Math.round(cur.v*10)/10, flodeT: cur.t, flodeStn: "Modellpunkt " + FLOW_POINT + " (mynningen)",
-    flodeTrend: d1 == null ? "" : d1 > 0.3 ? "Stigande" : d1 < -0.3 ? "Sjunkande" : "Stabilt",
-    flodeOm3: ahead ? Math.round(ahead.v*10)/10 : null, flodeMQ: c.mq != null ? c.mq : d.mq,
-    flodeSerie: series.filter(function(r){ return r.t >= now - 2*dayMs; }).map(function(r){ return [r.t, r.v]; }) };
-}
-function fetchFlow(){
-  return getJSON("https://vattenwebb.smhi.se/hydronu/data/point?subid=" + FLOW_POINT).then(pointToFlow)
-    .catch(function(){ return getJSON(repoRaw() + "?t=" + Date.now()).then(pointToFlow); });
-}
-function ocParam(re){
-  return getJSON(SMHI.oc + ".json").then(function(root){
-    return (root.resource || []).filter(function(r){ return re.test(r.title || ""); }).map(function(r){ return r.key; });
+function ocResources(re){
+  return getJSON(SMHI.oc + ".json", true).then(function(root){
+    return (root.resource || []).filter(function(r){ return re.test(r.title || ""); })
+      .sort(function(a, b){ return (/tim/i.test((b.title || "") + (b.summary || "")) ? 1 : 0) - (/tim/i.test((a.title || "") + (a.summary || "")) ? 1 : 0); })
+      .map(function(r){ return r.key; });
   });
 }
-function fetchSeaLevel(){
-  return station("vattenstand", function(){
-    return ocParam(/vattenstånd/i).then(function(keys){
+function srcSea(start){
+  return station("hav", function(){
+    return ocResources(/vattenstånd/i).then(function(keys){
       var i = 0;
       function next(){
         if (i >= keys.length) return null;
         var k = keys[i++];
         return stationList(SMHI.oc, k).then(function(r){
           var v = r.list.filter(function(s){ return s.active && /viken/i.test(s.name || ""); })[0];
-          return v ? { param: k, id: v.id, name: v.name, unit: r.unit } : next();
+          if (!v) return next();
+          var u = (r.unit || "").trim(), f = /mm/i.test(u) ? 0.1 : (/^m$|^meter$/i.test(u) ? 100 : 1);
+          return { param: k, id: v.id, name: v.name, f: f };
         }).catch(next);
       }
       return next();
     });
   }).then(function(s){
-    return stationData(SMHI.oc, s.param, s.id).then(function(v){
-      var f = /mm/i.test(s.unit) ? 0.1 : (/^m$|meter$/i.test((s.unit || "").trim()) ? 100 : 1);
-      var x = lastAndBefore(v, 3), cur = x.last.v*f, prev = x.prev ? x.prev.v*f : null;
-      return { vattenstand: Math.round(cur), vattenstandT: x.last.t, vattenstandStn: s.name,
-        vattenstandTrend: prev == null ? "" : cur - prev > 3 ? "Stigande" : cur - prev < -3 ? "Sjunkande" : "Stabilt" };
-    }).catch(function(e){ forget("vattenstand"); throw e; });
-  });
+    return stationSeries(SMHI.oc, s.param, s.id, start).then(function(v){ return { name: s.name, s: v.map(function(x){ return { t: x.t, v: x.v*s.f }; }) }; });
+  }).catch(function(e){ forget("hav"); throw e; });
 }
-function fetchWaterTemp(){
-  return station("vattentemp", function(){
+function srcWaterTemp(start){
+  return station("vtemp", function(){
     return stationList(SMHI.hyd, 4).then(function(r){
       var s = r.list.filter(function(x){ return x.active && /RÖNNE/i.test(x.catchmentName || ""); })[0];
       if (s) return { base: "hyd", param: 4, id: s.id, name: s.name };
-      return ocParam(/temperatur/i).then(function(keys){
+      return ocResources(/temperatur/i).then(function(keys){
         if (!keys.length) return null;
         return stationList(SMHI.oc, keys[0]).then(function(r2){ var n = nearestActive(r2.list, LAT, LNG, 40); return n ? { base: "oc", param: keys[0], id: n.id, name: n.name } : null; });
       });
     });
-  }).then(function(s){
-    return stationData(SMHI[s.base], s.param, s.id).then(function(v){ var l = v[v.length - 1]; return { vattentemp: Math.round(l.v*10)/10, vattentempT: l.t, vattentempStn: s.name }; })
-      .catch(function(e){ forget("vattentemp"); throw e; });
-  });
+  }).then(function(s){ return stationSeries(SMHI[s.base], s.param, s.id, start).then(function(v){ return { name: s.name, s: v }; }); })
+    .catch(function(e){ forget("vtemp"); throw e; });
 }
-function fetchMet(key, param){
+function srcMet(param, start){
   return station("met" + param, function(){
     return stationList(SMHI.met, param).then(function(r){ var n = nearestActive(r.list, LAT, LNG, 60); return n ? { id: n.id, name: n.name } : null; });
-  }).then(function(s){ return stationData(SMHI.met, param, s.id).then(function(v){ return { v: v, name: s.name }; }).catch(function(e){ forget("met" + param); throw e; }); });
+  }).then(function(s){ return stationSeries(SMHI.met, param, s.id, start).then(function(v){ return { name: s.name, s: v }; }); })
+    .catch(function(e){ forget("met" + param); throw e; });
 }
-function fetchPressure(){
-  return fetchMet("tryck", 9).then(function(r){
-    var x = lastAndBefore(r.v, 3), d = x.prev ? x.last.v - x.prev.v : null;
-    return { tryck: Math.round(x.last.v*10)/10, tryckT: x.last.t, tryckStn: r.name, trycktrend: d == null ? "" : d <= -1 ? "Fallande" : d >= 1 ? "Stigande" : "Stabilt", tryckDelta: d };
+function repoRaw(){
+  var m = location.hostname.match(/^([^.]+)\.github\.io$/i), repo = location.pathname.split("/")[1] || "";
+  var owner = m ? m[1] : "Ralsen90"; if (!m || !repo) repo = "Fiske";
+  return "https://raw.githubusercontent.com/" + owner + "/" + repo + "/main/flode.json";
+}
+function parseFlow(d){
+  var hist, fc, mq;
+  if (d.historik){ hist = d.historik; fc = d.prognos || []; mq = d.mq; }
+  else { var c = d.chartData || d; hist = (c.coutHindcast && c.coutHindcast.data) || []; fc = (c.coutForecast && c.coutForecast.data) || []; mq = c.mq; }
+  var lastHist = hist.length ? +hist[hist.length - 1][0] : 0;
+  var s = hist.concat(fc).map(function(r){ return { t: +r[0], v: num(r[1]) }; }).filter(function(r){ return r.v != null; }).sort(function(a, b){ return a.t - b.t; });
+  if (!s.length) throw new Error("tomt");
+  return { name: "Punkt " + FLOW_POINT + ", mynningen", s: s, mq: mq, prognosFran: lastHist };
+}
+var flowP = null;
+function srcFlow(){
+  if (flowP) return flowP;
+  flowP = getJSON("https://vattenwebb.smhi.se/hydronu/data/point?subid=" + FLOW_POINT).then(parseFlow)
+    .catch(function(){ return getJSON(repoRaw() + "?t=" + Date.now()).then(parseFlow); });
+  flowP.catch(function(){ flowP = null; });
+  return flowP;
+}
+function srcOpenMeteo(start, end){
+  var vars = "hourly=cloud_cover,precipitation,pressure_msl,wind_speed_10m,wind_direction_10m&wind_speed_unit=ms&timeformat=unixtime";
+  var base = start < Date.now() - 88*DAY ? "https://archive-api.open-meteo.com/v1/archive" : "https://api.open-meteo.com/v1/forecast";
+  var u = base + "?latitude=" + LAT + "&longitude=" + LNG + "&" + vars + "&start_date=" + dstr(start) + "&end_date=" + dstr(Math.min(end, Date.now() + 14*DAY));
+  return getJSON(u, true).then(function(r){
+    var h = r.hourly || {}, out = {};
+    ["cloud_cover", "precipitation", "pressure_msl", "wind_speed_10m", "wind_direction_10m"].forEach(function(k){
+      out[k] = (h.time || []).map(function(t, i){ return { t: t*1000, v: h[k] ? num(h[k][i]) : null }; }).filter(function(x){ return x.v != null; });
+    });
+    return out;
   });
+}
+function settle(obj){
+  var keys = Object.keys(obj);
+  return Promise.all(keys.map(function(k){ return obj[k].then(function(v){ return [k, v, null]; }, function(e){ return [k, null, e]; }); }))
+    .then(function(r){ var out = { ok: {}, fail: [] }; r.forEach(function(x){ if (x[1]) out.ok[x[0]] = x[1]; else out.fail.push(x[0]); }); return out; });
 }
 var DIRS = ["N", "NO", "O", "SO", "S", "SV", "V", "NV"];
-function fetchWind(){
-  return Promise.all([fetchMet("vind", 4), fetchMet("vindr", 3).catch(function(){ return null; })]).then(function(r){
-    var sp = r[0].v[r[0].v.length - 1].v, dr = r[1] && r[1].v.length ? r[1].v[r[1].v.length - 1].v : null;
-    return { vind: (dr != null ? DIRS[Math.round(dr/45) % 8] + " " : "") + Math.round(sp) + " m/s", vindStn: r[0].name };
+function meanIn(s, a, b){ if (!s) return null; var v = s.filter(function(x){ return x.t >= a && x.t <= b; }); if (!v.length) return null; return v.reduce(function(m, x){ return m + x.v; }, 0)/v.length; }
+function sumIn(s, a, b){ if (!s) return null; var v = s.filter(function(x){ return x.t > a && x.t <= b; }); if (!v.length) return null; return v.reduce(function(m, x){ return m + x.v; }, 0); }
+function dirMean(s, a, b){
+  if (!s) return null; var v = s.filter(function(x){ return x.t >= a && x.t <= b; }); if (!v.length) return null;
+  var x = 0, y = 0; v.forEach(function(p){ x += Math.cos(p.v*rad); y += Math.sin(p.v*rad); });
+  return (Math.atan2(y, x)/rad + 360) % 360;
+}
+function flowTrend(s, t){
+  var a = at(s, t, 30), b = at(s, t - 24*H, 30); if (a == null || b == null) return null;
+  var d = (a - b)/Math.max(b, 0.5); return d > 0.05 ? "Stigande" : d < -0.05 ? "Sjunkande" : "Stabilt";
+}
+var NAMES = { hav: "vattenstånd", vtemp: "vattentemp", tryck: "lufttryck", vind: "vind", vindr: "vindriktning", flode: "flöde", om: "molnighet/nederbörd" };
+
+// Hämtar allt som gällde mellan start och slut. Används både för läget nu och för loggade pass.
+function fetchConditions(start, end){
+  return settle({
+    hav: srcSea(start), vtemp: srcWaterTemp(start), tryck: srcMet(9, start - 6*H),
+    vind: srcMet(4, start), vindr: srcMet(3, start), flode: srcFlow(), om: srcOpenMeteo(start - 3*DAY, end)
+  }).then(function(r){
+    var o = r.ok, sea = o.hav && o.hav.s, flow = o.flode && o.flode.s, om = o.om || {};
+    var pres = (o.tryck && o.tryck.s.length) ? o.tryck.s : om.pressure_msl, cloud = om.cloud_cover;
+    var tl = [], t0 = Math.floor(start/H)*H;
+    for (var t = t0; t <= Math.max(end, t0); t += H){
+      var tt = Math.min(Math.max(t, start), end);
+      tl.push({ t: tt, niva: round(at(sea, tt, 1.5), 0), nivaTrend: trend(sea, tt, 3, 3, ["Stigande", "Stabilt", "Sjunkande"]),
+        tryck: round(at(pres, tt, 1.5), 1), tryckTrend: trend(pres, tt, 3, 1, ["Stigande", "Stabilt", "Fallande"]),
+        moln: round(at(cloud, tt, 1.5), 0), flode: round(at(flow, tt, 30), 1), flodeTrend: flowTrend(flow, tt), ljus: ljusAt(tt) });
+    }
+    var ws = o.vind ? meanIn(o.vind.s, start - H, end) : meanIn(om.wind_speed_10m, start - H, end);
+    var wd = o.vindr ? dirMean(o.vindr.s, start - H, end) : dirMean(om.wind_direction_10m, start - H, end);
+    var f72 = null, fa = at(flow, start, 30), fb = at(flow, start - 72*H, 30);
+    if (fa != null && fb != null) f72 = Math.round((fa - fb)/Math.max(fb, 0.5)*100);
+    var seaWin = sea ? sea.filter(function(x){ return x.t >= start && x.t <= end; }) : [];
+    return {
+      hamtat: Date.now(), start: start, end: end, timeline: tl,
+      sum: {
+        vtemp: o.vtemp ? round(at(o.vtemp.s, start, 30), 1) : null,
+        vind: ws == null ? null : (wd != null ? DIRS[Math.round(wd/45) % 8] + " " : "") + Math.round(ws) + " m/s",
+        regn24: round(sumIn(om.precipitation, start - 24*H, start), 1), regn72: round(sumIn(om.precipitation, start - 72*H, start), 1),
+        flode72: f72, flodeMQ: o.flode ? o.flode.mq : null,
+        nivaMin: seaWin.length ? Math.round(Math.min.apply(null, seaWin.map(function(x){ return x.v; }))) : null,
+        nivaMax: seaWin.length ? Math.round(Math.max.apply(null, seaWin.map(function(x){ return x.v; }))) : null
+      },
+      kallor: { hav: o.hav && o.hav.name, tryck: o.tryck ? o.tryck.name : (om.pressure_msl ? "Open-Meteo" : null), vtemp: o.vtemp && o.vtemp.name, flode: o.flode && o.flode.name, vind: o.vind && o.vind.name },
+      saknas: r.fail.filter(function(k){ return k !== "vindr" && !(k === "tryck" && om.pressure_msl) && !(k === "vind" && om.wind_speed_10m); }).map(function(k){ return NAMES[k] || k; })
+    };
   });
 }
-function fetchAirTemp(){ return fetchMet("luft", 1).then(function(r){ return { lufttemp: r.v[r.v.length - 1].v }; }); }
+function round(v, d){ if (v == null) return null; var p = Math.pow(10, d); return Math.round(v*p)/p; }
 
+// Prognos framåt för skannern
 function fetchForecast(obs){
-  var tz = "&timezone=Europe%2FStockholm";
-  var wx = getJSON("https://api.open-meteo.com/v1/forecast?latitude=" + LAT + "&longitude=" + LNG + "&hourly=pressure_msl,wind_speed_10m,wind_direction_10m&wind_speed_unit=ms&forecast_days=7" + tz);
+  var tz = "&timeformat=unixtime";
+  var wx = getJSON("https://api.open-meteo.com/v1/forecast?latitude=" + LAT + "&longitude=" + LNG + "&hourly=pressure_msl,cloud_cover&forecast_days=7" + tz);
   var sea = getJSON("https://marine-api.open-meteo.com/v1/marine?latitude=" + SEA_LAT + "&longitude=" + SEA_LNG + "&hourly=sea_level_height_msl&past_days=1&forecast_days=7" + tz).catch(function(){ return null; });
-  return Promise.all([wx, sea]).then(function(r){
-    var map = {};
-    function row(t){ return map[t] || (map[t] = { t: new Date(t).getTime() }); }
+  return Promise.all([wx, sea, srcFlow().catch(function(){ return null; })]).then(function(r){
+    var rows = {}, calib = null, raw = false;
+    function row(t){ return rows[t] || (rows[t] = { t: t*1000 }); }
     var h = r[0].hourly || {};
-    (h.time || []).forEach(function(t, i){ var o = row(t); o.tryck = h.pressure_msl[i]; o.vind = h.wind_speed_10m ? h.wind_speed_10m[i] : null; });
-    var calib = null, raw = false;
-    if (r[1] && r[1].hourly && r[1].hourly.sea_level_height_msl){
-      var sh = r[1].hourly, lvl = sh.sea_level_height_msl;
-      if (obs && obs.vattenstand != null && obs.vattenstandT){
+    (h.time || []).forEach(function(t, i){ var o = row(t); o.tryck = num(h.pressure_msl[i]); o.moln = num(h.cloud_cover[i]); });
+    var sh = r[1] && r[1].hourly, lvl = sh && sh.sea_level_height_msl;
+    if (lvl){
+      if (obs && obs.niva != null && obs.t){
         var bi = -1, bd = Infinity;
-        sh.time.forEach(function(t, i){ var dd = Math.abs(new Date(t) - obs.vattenstandT); if (lvl[i] != null && dd < bd){ bd = dd; bi = i; } });
-        if (bi >= 0 && bd < 2*36e5) calib = obs.vattenstand - lvl[bi]*100;
+        sh.time.forEach(function(t, i){ var dd = Math.abs(t*1000 - obs.t); if (lvl[i] != null && dd < bd){ bd = dd; bi = i; } });
+        if (bi >= 0 && bd < 2*H) calib = obs.niva - lvl[bi]*100;
       }
       if (calib == null){ calib = 0; raw = true; }
-      sh.time.forEach(function(t, i){ if (lvl[i] != null) row(t).vattenstand = Math.round(lvl[i]*100 + calib); });
+      sh.time.forEach(function(t, i){ if (lvl[i] != null) row(t).niva = Math.round(lvl[i]*100 + calib); });
     }
-    var timmar = Object.keys(map).map(function(k){ return map[k]; }).sort(function(a, b){ return a.t - b.t; });
-    return { updatedAt: new Date().toISOString(), timmar: timmar, havOkalibrerad: raw, harHav: !!(r[1] && r[1].hourly && r[1].hourly.sea_level_height_msl) };
+    var list = Object.keys(rows).map(function(k){ return rows[k]; }).sort(function(a, b){ return a.t - b.t; });
+    return { hamtat: Date.now(), rader: list, havOkalibrerad: raw, harHav: !!lvl, flode: r[2] ? r[2].s : null };
   });
 }
 
-function fetchAll(){
-  if (busy) return;
-  busy = true;
-  var btn = $("fetchBtn"); btn.disabled = true; btn.textContent = "Hämtar…";
-  var parts = [["flöde", fetchFlow], ["vattenstånd", fetchSeaLevel], ["vattentemp", fetchWaterTemp], ["lufttryck", fetchPressure], ["vind", fetchWind], ["lufttemp", fetchAirTemp]];
-  var failed = [];
-  Promise.all(parts.map(function(p){ return p[1]().catch(function(){ failed.push(p[0]); return {}; }); })).then(function(res){
-    var o = { updatedAt: new Date().toISOString() };
-    res.forEach(function(r){ for (var k in r) o[k] = r[k]; });
-    if (failed.length === parts.length){ throw new Error("allt"); }
-    o.misslyckat = failed;
-    latest = o; save(K.lage, o);
-    renderMeasures(); renderSimilar(); renderScan();
-    return fetchForecast(o).then(function(f){ forecast = f; save(K.prog, f); }).catch(function(){ failed.push("prognos"); });
-  }).then(function(){
-    renderScan();
-    toast(failed.length ? "Hämtat, men saknar: " + failed.join(", ") : "Läget uppdaterat");
-  }).catch(function(){
-    toast("Kunde inte nå SMHI. Kolla uppkopplingen och försök igen.");
-  }).then(function(){ busy = false; btn.disabled = false; btn.textContent = "Hämta läget"; });
+/* ---------- Faktorer och inlärning ---------- */
+function nivaB(v){ v = num(v); if (v == null) return null; return v < 25 ? "Lågt, under 25 cm" : v <= 45 ? "Medel, 25–45 cm" : "Högt, över 45 cm"; }
+function molnB(v){ v = num(v); if (v == null) return null; return v >= 70 ? "Mulet" : v >= 30 ? "Halvklart" : "Klart"; }
+// Grundantaganden (multiplikator mot snittet) från Benjamins egna analyser. Loggen tar över efter hand.
+var FACTORS = [
+  { k: "ljus", namn: "Ljus", w: .25, b: { "Gryning": 1.5, "Morgonljus": 1.2, "Dagsljus": .7, "Kvällsljus": 1.2, "Skymning": 1.5, "Mörker": .6 }, of: function(c){ return c.ljus; } },
+  { k: "niva", namn: "Havsnivå", w: .2, b: { "Lågt, under 25 cm": .6, "Medel, 25–45 cm": 1, "Högt, över 45 cm": 1.5 }, of: function(c){ return nivaB(c.niva); } },
+  { k: "nivaTrend", namn: "Havet", w: .2, b: { "Stigande": 1.3, "Stabilt": 1, "Sjunkande": .8 }, of: function(c){ return c.nivaTrend; } },
+  { k: "flodeTrend", namn: "Flöde", w: .15, b: { "Stigande": 1.2, "Stabilt": 1, "Sjunkande": .9 }, of: function(c){ return c.flodeTrend; } },
+  { k: "tryckTrend", namn: "Lufttryck", w: .1, b: { "Fallande": 1.3, "Stabilt": .9, "Stigande": .8 }, of: function(c){ return c.tryckTrend; } },
+  { k: "moln", namn: "Molnighet", w: .1, b: { "Mulet": 1.2, "Halvklart": 1, "Klart": .8 }, of: function(c){ return molnB(c.moln); } }
+];
+var PASSFACT = [
+  { k: "strom", namn: "Strömdrag", of: function(p){ return p.strom; } },
+  { k: "bete", namn: "Bete", of: function(p){ return p.bete; } },
+  { k: "farg", namn: "Färg", of: function(p){ return p.farg; } },
+  { k: "vikt", namn: "Vikt", of: function(p){ return p.vikt != null && p.vikt !== "" ? fmt(p.vikt, 1) + " g" : null; } },
+  { k: "plats", namn: "Plats", of: function(p){ return p.plats; } }
+];
+function isHugg(h){ return h.utfall !== "Följare"; }
+// Förhållanden för en timme i ett pass: automatiskt hämtade i första hand, annars det som loggades för hand
+function condFor(p, t){
+  var c = { ljus: ljusAt(t) };
+  var tl = p.auto && p.auto.timeline;
+  if (tl && tl.length){
+    var best = tl[0]; tl.forEach(function(x){ if (Math.abs(x.t - t) < Math.abs(best.t - t)) best = x; });
+    for (var k in best) if (k !== "t" && k !== "ljus" && best[k] != null) c[k] = best[k];
+  }
+  var m = p.manuellt || {};
+  if (c.niva == null && m.niva != null) c.niva = m.niva;
+  if (c.tryckTrend == null && m.tryckTrend) c.tryckTrend = m.tryckTrend;
+  if (c.flode == null && m.flode != null) c.flode = m.flode;
+  return c;
+}
+function passHours(p){ return Math.max(0.25, (p.end - p.start)/H); }
+function stats(){
+  var S = { tot: { h: 0, n: 0, pass: sessions.length, landade: 0, foljare: 0 } };
+  FACTORS.concat(PASSFACT).forEach(function(f){ S[f.k] = {}; });
+  function add(k, b, h, n){ if (!b) return; var o = S[k][b] || (S[k][b] = { h: 0, n: 0 }); o.h += h; o.n += n; }
+  sessions.forEach(function(p){
+    var hours = passHours(p), steps = Math.max(1, Math.ceil(hours)), w = hours/steps;
+    for (var i = 0; i < steps; i++){
+      var t = p.start + (i + 0.5)*(p.end - p.start)/steps, c = condFor(p, t);
+      FACTORS.forEach(function(f){ add(f.k, f.of(c), w, 0); });
+    }
+    (p.hugg || []).forEach(function(h){
+      if (h.utfall === "Landad") S.tot.landade++;
+      if (!isHugg(h)){ S.tot.foljare++; return; }
+      var c = condFor(p, h.t || (p.start + p.end)/2);
+      FACTORS.forEach(function(f){ add(f.k, f.of(c), 0, 1); });
+      S.tot.n++;
+    });
+    var n = (p.hugg || []).filter(isHugg).length;
+    PASSFACT.forEach(function(f){ add(f.k, f.of(p), hours, n); });
+    S.tot.h += hours;
+  });
+  S.R = S.tot.h ? S.tot.n/S.tot.h : 0;
+  S.Rp = (S.tot.n + 1)/(S.tot.h + 3);
+  return S;
+}
+function learned(S, f, bucket){
+  var m = f.b[bucket]; if (m == null) return null;
+  var st = S[f.k][bucket] || { h: 0, n: 0 }, KH = 3;
+  var r = (st.n + KH*S.Rp*m)/(st.h + KH);
+  return { x: r/(r + S.Rp), st: st };
+}
+function scoreCond(S, c, phases){
+  var parts = [], why = [], known = 0;
+  FACTORS.forEach(function(f){
+    if (f.k === "ljus"){
+      var ls = phases.map(function(ph){ return learned(S, f, ph); });
+      var x = ls.reduce(function(a, l){ return a + l.x; }, 0)/ls.length, hh = ls.reduce(function(a, l){ return a + l.st.h; }, 0), nn = ls.reduce(function(a, l){ return a + l.st.n; }, 0);
+      parts.push([f.w, x]); known++;
+      why.push("<b>" + phases.join("/") + "</b>: " + (hh ? nn + " hugg på " + fmt(hh) + " h fiskat" : "inga timmar loggade än"));
+      return;
+    }
+    var b = f.of(c);
+    if (!b || f.b[b] == null){ parts.push([f.w, .5]); return; }
+    var l = learned(S, f, b); parts.push([f.w, l.x]); known++;
+    why.push("<b>" + f.namn + ": " + b.toLowerCase() + "</b>" + (l.st.h ? ", " + l.st.n + " hugg på " + fmt(l.st.h) + " h" : ""));
+  });
+  var sw = parts.reduce(function(a, x){ return a + x[0]; }, 0);
+  return { score: Math.round(parts.reduce(function(a, x){ return a + x[0]*x[1]; }, 0)/sw*100), why: why, known: known };
 }
 
 /* ---------- Läget ---------- */
@@ -461,7 +616,7 @@ function fact(v, l, sub){ return '<div class="fact"><b>' + v + '</b><span>' + es
 function unit(u){ return ' <small class="u">' + u + '</small>'; }
 function renderBand(){
   var now = new Date(), t = sunTimes(now), mid = new Date(now); mid.setHours(0,0,0,0);
-  function pct(d){ return Math.max(0, Math.min(100, (d - mid)/dayMs*100)); }
+  function pct(d){ return Math.max(0, Math.min(100, (d - mid)/DAY*100)); }
   var band = $("band"), css = "var(--night)";
   if (t.rise && t.set){
     var a = pct(t.dawn || t.rise), b = pct(t.rise), c = pct(t.set), dd = pct(t.dusk || t.set);
@@ -472,297 +627,363 @@ function renderBand(){
   if (t.rise) html += '<span class="tick" style="left:' + pct(t.rise) + '%">' + hm(t.rise) + '</span>';
   if (t.set) html += '<span class="tick" style="left:' + pct(t.set) + '%">' + hm(t.set) + '</span>';
   band.innerHTML = html + '<span class="now" style="left:' + pct(now) + '%"></span>';
-  var ph = lightPhase(now, t), m = moon(now);
-  $("lightnow").innerHTML = esc(ph.label) + (ph.note ? ' <span>' + esc(ph.note) + '</span>' : "");
+  var m = moon(now);
+  $("lightnow").textContent = ljusAt(now) || "–";
   $("sunfacts").innerHTML = fact(hm(t.dawn), "Gryning börjar") + fact(hm(t.rise), "Soluppgång") + fact(hm(t.set), "Solnedgång") + fact(hm(t.dusk), "Skymningen slut") + fact(m.illum + " %", m.name);
   $("clock").firstChild.nodeValue = hm(now);
   $("date").textContent = now.toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "long" });
 }
-function ago(t){ if (!t) return ""; var m = Math.round((Date.now() - t)/60000); return m < 60 ? m + " min sedan" : m < 48*60 ? Math.round(m/60) + " h sedan" : Math.round(m/1440) + " dygn sedan"; }
+function lageNow(){ if (!lage) return null; var tl = lage.timeline; return tl && tl.length ? tl[tl.length - 1] : null; }
 function renderMeasures(){
   var el = $("measures");
-  if (!latest){ el.innerHTML = '<p class="muted">Tryck på ”Hämta läget” för att hämta flöde, vattenstånd, tryck och vind från SMHI.</p>'; return; }
-  var L = latest, html = '<p class="muted">Hämtat ' + esc(new Date(L.updatedAt).toLocaleString("sv-SE", { weekday: "short", hour: "2-digit", minute: "2-digit" })) + '</p><div class="facts">';
-  if (L.flode != null) html += fact(fmtNum(L.flode) + unit("m³/s"), "Flöde" + (L.flodeTrend ? ", " + L.flodeTrend.toLowerCase() : ""), (L.flodeStn || "") + (L.flodeOm3 != null ? ", om 3 dygn " + fmtNum(L.flodeOm3) + " m³/s" : "") + (L.flodeMQ != null ? ", normalt " + fmtNum(L.flodeMQ, 0) : ""));
-  if (L.vattenstand != null) html += fact((L.vattenstand > 0 ? "+" : "") + fmtNum(L.vattenstand, 0) + unit("cm"), "Vattenstånd" + (L.vattenstandTrend ? ", " + L.vattenstandTrend.toLowerCase() : ""), (L.vattenstandStn || "Viken") + ", " + ago(L.vattenstandT));
-  if (L.vattentemp != null) html += fact(fmtNum(L.vattentemp) + unit("°C"), "Vattentemp", (L.vattentempStn || "") + ", " + ago(L.vattentempT));
-  if (L.tryck != null) html += fact(fmtNum(L.tryck, 0) + unit("hPa"), "Lufttryck" + (L.trycktrend ? ", " + L.trycktrend.toLowerCase() : ""), (L.tryckStn || "") + (L.tryckDelta != null ? ", " + (L.tryckDelta > 0 ? "+" : "") + fmtNum(L.tryckDelta) + " på 3 h" : ""));
-  if (L.vind) html += fact(esc(L.vind), "Vind", L.vindStn || "");
-  if (L.lufttemp != null) html += fact(fmtNum(L.lufttemp) + unit("°C"), "Lufttemp");
+  if (!lage){ el.innerHTML = '<p class="muted">Tryck på ”Hämta läget” för att hämta data från SMHI.</p>'; return; }
+  var c = lageNow() || {}, s = lage.sum || {}, k = lage.kallor || {};
+  var html = '<p class="muted small">Hämtat ' + esc(new Date(lage.hamtat).toLocaleString("sv-SE", { weekday: "short", hour: "2-digit", minute: "2-digit" })) + '</p><div class="facts">';
+  if (c.flode != null) html += fact(fmt(c.flode) + unit("m³/s"), "Flöde" + (c.flodeTrend ? ", " + c.flodeTrend.toLowerCase() : ""), [s.flode72 != null ? sign(s.flode72, 0) + " % på 3 dygn" : "", s.flodeMQ != null ? "normalt " + fmt(s.flodeMQ, 0) : ""].filter(Boolean).join(", "));
+  if (c.niva != null) html += fact(sign(c.niva, 0) + unit("cm"), "Havet" + (c.nivaTrend ? ", " + c.nivaTrend.toLowerCase() : ""), k.hav || "Viken");
+  if (s.vtemp != null) html += fact(fmt(s.vtemp) + unit("°C"), "Vattentemp", k.vtemp || "");
+  if (c.tryck != null) html += fact(fmt(c.tryck, 0) + unit("hPa"), "Lufttryck" + (c.tryckTrend ? ", " + c.tryckTrend.toLowerCase() : ""), k.tryck || "");
+  if (c.moln != null) html += fact(fmt(c.moln, 0) + unit("%"), "Molnighet");
+  if (s.regn24 != null) html += fact(fmt(s.regn24) + unit("mm"), "Regn senaste dygnet", s.regn72 != null ? fmt(s.regn72) + " mm på 3 dygn" : "");
+  if (s.vind) html += fact(esc(s.vind), "Vind", k.vind || "");
   html += '</div>';
-  if (L.misslyckat && L.misslyckat.length) html += '<p class="note" style="margin-top:8px">Gick inte att hämta: ' + esc(L.misslyckat.join(", ")) + '. Fyll i det själv när du loggar om det behövs.</p>';
+  if (lage.saknas && lage.saknas.length) html += '<p class="note">Gick inte att hämta: ' + esc(lage.saknas.join(", ")) + '.</p>';
   el.innerHTML = html;
 }
-var SCALE = { flode: 4, vattenstand: 15, vattentemp: 2.5, tryck: 6 };
-function renderSimilar(){
-  var el = $("similar");
-  if (!sessions.length || !latest){ el.innerHTML = '<p class="muted">Visar dina pass med mest lika förhållanden som nu, när det finns både mätvärden och loggade pass.</p>'; return; }
-  var scored = sessions.map(function(s){
-    var sum = 0, k = 0;
-    for (var f in SCALE){ var a = num(s[f]), b = num(latest[f]); if (a != null && b != null){ sum += Math.pow((a - b)/SCALE[f], 2); k++; } }
-    if (latest.trycktrend && s.trycktrend){ sum += latest.trycktrend === s.trycktrend ? 0 : .6; k++; }
-    return { s: s, d: k >= 2 ? Math.sqrt(sum/k) : null };
-  }).filter(function(x){ return x.d != null; }).sort(function(a, b){ return a.d - b.d; }).slice(0, 3);
-  if (!scored.length){ el.innerHTML = '<p class="muted">Dina pass saknar tillräckligt med mätvärden för att jämföra.</p>'; return; }
-  el.innerHTML = '<ol class="similar">' + scored.map(function(x){
-    var s = x.s, h = num(s.hugg) || 0;
-    return '<li><b>' + esc(fmtWhen(s.when)) + '</b>, ' + (h ? '<span class="hit">' + h + ' hugg' + (s.art ? ' (' + esc(s.art) + ')' : '') + '</span>' : 'inga hugg') +
-      '<br><span class="muted">' + fmtNum(s.flode) + ' m³/s, ' + fmtNum(s.vattenstand, 0) + ' cm, ' + fmtNum(s.vattentemp) + ' °C, ' + fmtNum(s.tryck, 0) + ' hPa' + (s.trycktrend ? ' ' + esc(s.trycktrend.toLowerCase()) : '') + (s.rigg ? '. ' + esc(s.rigg) : '') + '</span></li>';
-  }).join("") + '</ol>';
+function fetchLage(){
+  if (busy) return; busy = true;
+  var btn = $("fetchBtn"); btn.disabled = true; btn.textContent = "Hämtar…";
+  var now = Date.now();
+  fetchConditions(now - 3*H, now).then(function(r){
+    lage = r; save(K.lage, r); renderMeasures(); renderScan();
+    var c = lageNow() || {};
+    return fetchForecast({ niva: c.niva, t: c.t }).then(function(f){ forecast = f; save(K.prog, f); }).catch(function(){ r.saknas.push("prognos"); })
+      .then(function(){ toast(r.saknas.length ? "Hämtat, men saknar: " + r.saknas.join(", ") : "Läget uppdaterat"); });
+  }).catch(function(){ toast("Kunde inte hämta. Kolla uppkopplingen."); })
+    .then(function(){ busy = false; btn.disabled = false; btn.textContent = "Hämta läget"; renderAll(); });
 }
 
 /* ---------- Skanner ---------- */
-// Grundantaganden från Benjamins egna analyser. Loggen flyttar dem efter hand.
-var PRIORS = {
-  ljus: { "Gryning": .75, "Morgonljus": .6, "Dagsljus": .35, "Kvällsljus": .6, "Skymning": .75, "Mörker": .3 },
-  niva: { "Lågt": .3, "Medel": .5, "Högt": .75 },
-  tryck: { "Fallande": .7, "Stabilt": .45, "Stigande": .4 }
-};
-var WEIGHT = { ljus: .4, niva: .35, tryck: .25 };
-function nivaBucket(v){ v = num(v); if (v == null) return null; return v < 25 ? "Lågt" : v <= 45 ? "Medel" : "Högt"; }
-function sessPhase(s){ var d = new Date(s.when); if (isNaN(d)) return null; var l = lightPhase(d, sunTimes(d)).label; return l === "–" ? null : l; }
-function sessBucket(f, s){ return f === "ljus" ? sessPhase(s) : f === "niva" ? nivaBucket(s.vattenstand) : (s.trycktrend || null); }
-function learned(f, bucket){
-  var prior = PRIORS[f][bucket]; if (prior == null) return null;
-  var n = 0, h = 0;
-  sessions.forEach(function(s){ if (sessBucket(f, s) === bucket){ n++; if ((num(s.hugg) || 0) > 0) h++; } });
-  return { p: (h + prior*3)/(n + 3), n: n, h: h };
+function fcRow(t, maxH){
+  if (!forecast || !forecast.rader) return null;
+  var best = null, bd = Infinity; forecast.rader.forEach(function(r){ var d = Math.abs(r.t - t); if (d < bd){ bd = d; best = r; } });
+  return bd <= (maxH || 1.5)*H ? best : null;
 }
-function nearestRow(t, maxH){
-  if (!forecast || !forecast.timmar) return null;
-  var best = null, bd = Infinity;
-  forecast.timmar.forEach(function(r){ var d = Math.abs(r.t - t); if (d < bd){ bd = d; best = r; } });
-  return bd <= maxH*36e5 ? best : null;
-}
-function condAt(t){
-  var r = nearestRow(t, 1.5), p = nearestRow(t - 3*36e5, 1.5), out = { src: "prognos" };
+function futureCond(t){
+  var c = {}, r = fcRow(t), p = fcRow(t - 3*H);
   if (r){
-    if (r.vattenstand != null) out.vattenstand = r.vattenstand;
-    if (r.tryck != null && p && p.tryck != null){ var d = r.tryck - p.tryck; out.trycktrend = d <= -1 ? "Fallande" : d >= 1 ? "Stigande" : "Stabilt"; }
+    c.niva = r.niva; c.moln = r.moln;
+    if (r.niva != null && p && p.niva != null){ var d = r.niva - p.niva; c.nivaTrend = d > 3 ? "Stigande" : d < -3 ? "Sjunkande" : "Stabilt"; }
+    if (r.tryck != null && p && p.tryck != null){ var e = r.tryck - p.tryck; c.tryckTrend = e <= -1 ? "Fallande" : e >= 1 ? "Stigande" : "Stabilt"; }
   }
-  if (out.vattenstand == null && !out.trycktrend && latest && Math.abs(t - new Date(latest.updatedAt)) < 18*36e5)
-    return { vattenstand: num(latest.vattenstand), trycktrend: latest.trycktrend || null, src: "nuläge" };
-  return out;
+  if (forecast && forecast.flode) c.flodeTrend = flowTrend(forecast.flode.map(function(x){ return x; }), t);
+  var now = lageNow();
+  if (now && Math.abs(t - now.t) < 6*H){ ["niva", "nivaTrend", "tryckTrend", "moln", "flodeTrend"].forEach(function(k){ if (c[k] == null && now[k] != null) c[k] = now[k]; }); }
+  return c;
 }
-function buildWindows(){
-  var now = new Date(), out = [], H = 36e5;
+function buildWindows(S){
+  var now = Date.now(), out = [];
   for (var i = 0; i < 7; i++){
-    var day = new Date(now); day.setDate(day.getDate() + i); day.setHours(12, 0, 0, 0);
+    var day = new Date(now + i*DAY); day.setHours(12, 0, 0, 0);
     var t = sunTimes(day); if (!t.rise || !t.set) continue;
     var r = t.rise.getTime(), st = t.set.getTime();
-    out.push({ kind: "Morgon", start: (t.dawn || t.rise).getTime(), end: r + 1.5*H, center: r + .5*H, phases: ["Gryning", "Morgonljus"] });
-    out.push({ kind: "Dag", start: r + 1.5*H, end: st - 1.5*H, center: (r + st)/2, phases: ["Dagsljus"] });
-    out.push({ kind: "Kväll", start: st - 1.5*H, end: (t.dusk || t.set).getTime(), center: st - .25*H, phases: ["Kvällsljus", "Skymning"] });
+    out.push({ kind: "morgon", start: (t.dawn || t.rise).getTime(), end: r + 1.5*H, center: r + .5*H, phases: ["Gryning", "Morgonljus"] });
+    out.push({ kind: "dag", start: r + 1.5*H, end: st - 1.5*H, center: (r + st)/2, phases: ["Dagsljus"] });
+    out.push({ kind: "kväll", start: st - 1.5*H, end: (t.dusk || t.set).getTime(), center: st - .25*H, phases: ["Kvällsljus", "Skymning"] });
   }
-  return out.filter(function(w){ return w.end > now.getTime() + 20*60e3; }).map(function(w){
-    var at = Math.max(w.center, now.getTime()), c = condAt(at), parts = [], why = [], known = 1;
-    var lp = w.phases.map(function(ph){ return learned("ljus", ph); });
-    var lpp = lp.reduce(function(a, x){ return a + x.p; }, 0)/lp.length, ln = lp.reduce(function(a, x){ return a + x.n; }, 0), lh = lp.reduce(function(a, x){ return a + x.h; }, 0);
-    parts.push([WEIGHT.ljus, lpp]);
-    why.push("<b>" + w.phases.join("/") + "</b>" + (ln ? ": " + lh + " av " + ln + " pass gav hugg" : ": inga pass loggade i det ljuset än"));
-    if (c.vattenstand != null){
-      var nb = nivaBucket(c.vattenstand), lv = learned("niva", nb); known++;
-      parts.push([WEIGHT.niva, lv.p]);
-      why.push("<b>" + nb.toLowerCase() + " vatten</b> (" + (c.vattenstand > 0 ? "+" : "") + fmtNum(c.vattenstand, 0) + " cm, " + c.src + ")" + (lv.n ? ": " + lv.h + " av " + lv.n + " pass gav hugg" : ""));
-    } else { parts.push([WEIGHT.niva, .5]); why.push("<b>vattenstånd okänt</b>, räknas neutralt"); }
-    if (c.trycktrend){
-      var lt = learned("tryck", c.trycktrend); known++;
-      parts.push([WEIGHT.tryck, lt.p]);
-      why.push("<b>" + c.trycktrend.toLowerCase() + " tryck</b> (" + c.src + ")" + (lt.n ? ": " + lt.h + " av " + lt.n + " pass gav hugg" : ""));
-    } else { parts.push([WEIGHT.tryck, .5]); why.push("<b>trycktrend okänd</b>, räknas neutralt"); }
-    var sw = parts.reduce(function(a, x){ return a + x[0]; }, 0);
-    var score = Math.round(parts.reduce(function(a, x){ return a + x[0]*x[1]; }, 0)/sw*100);
-    var conf = known === 3 ? (c.src === "prognos" ? "Prognos" : "Nuläget") : known === 2 ? "Delvis data" : "Bara ljus, osäker";
-    return { w: w, score: score, why: why, conf: conf, known: known };
+  return out.filter(function(w){ return w.end > now + 20*60e3; }).map(function(w){
+    var sc = scoreCond(S, futureCond(Math.max(w.center, now)), w.phases);
+    sc.w = w; sc.conf = sc.known >= 5 ? "Bra underlag" : sc.known >= 3 ? "Delvis underlag" : "Mest ljus, osäker"; return sc;
   });
 }
 function winLabel(w){
-  var s = new Date(w.start), e = new Date(w.end), today = new Date(); today.setHours(0,0,0,0);
-  var dd = Math.round((new Date(s).setHours(0,0,0,0) - today)/dayMs);
+  var s = new Date(w.start), today = new Date(); today.setHours(0,0,0,0);
+  var dd = Math.round((new Date(w.start).setHours(0,0,0,0) - today)/DAY);
   var day = dd === 0 ? "Idag" : dd === 1 ? "Imorgon" : s.toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "numeric" });
-  return day.charAt(0).toUpperCase() + day.slice(1) + ", " + w.kind.toLowerCase() + " " + hm(s) + "–" + hm(e);
+  return day.charAt(0).toUpperCase() + day.slice(1) + ", " + w.kind + " " + hm(s) + "–" + hm(w.end);
 }
 function renderScan(){
-  var el = $("scan"), wins = buildWindows(); if (!wins.length){ el.innerHTML = ""; return; }
+  var el = $("scan"), S = stats(), wins = buildWindows(S); if (!wins.length){ el.innerHTML = ""; return; }
   var best = wins.slice().sort(function(a, b){ return b.score - a.score || b.known - a.known || a.w.start - b.w.start; })[0];
-  var html = '<div class="best"><div class="bhead"><div><div class="bw">' + esc(winLabel(best.w)) + '</div><div class="muted small">Underlag: ' + esc(best.conf) + '</div></div>' +
+  var html = '<div class="best"><div class="bhead"><div><div class="bw">' + esc(winLabel(best.w)) + '</div><div class="muted small">' + esc(best.conf) + '</div></div>' +
     '<div class="bs">' + best.score + '<small> /100</small></div></div><ul class="why">' + best.why.map(function(w){ return "<li>" + w + "</li>"; }).join("") + '</ul></div>';
   html += '<div class="wins">' + wins.slice(0, 12).filter(function(x){ return x !== best; }).map(function(x){
     return '<div class="win"><div class="wl"><b>' + esc(winLabel(x.w)) + '</b><span>' + esc(x.conf) + '</span></div><div class="bar"><i style="width:' + x.score + '%"></i></div><div class="sc">' + x.score + '</div></div>';
   }).join("") + '</div>';
-  var n = sessions.length, note = 'Bygger på ' + n + ' loggade pass. ' + (n < 8 ? "Med så få pass styr mest grundantagandena från dina egna analyser: högt vatten, fallande tryck och lågt ljus. " : "Grundantagandena justeras nu tydligt av din logg. ");
-  if (forecast && forecast.timmar && forecast.timmar.length){
-    note += "Prognos för tryck" + (forecast.harHav ? " och vattenstånd" : "") + " från Open-Meteo, hämtad " + ago(new Date(forecast.updatedAt).getTime()) + ".";
-    if (forecast.harHav) note += forecast.havOkalibrerad ? " Vattenståndsprognosen är inte justerad mot Viken den här gången och kan ligga fel i nivå." : " Vattenståndsprognosen är justerad mot uppmätt nivå i Viken, men är en grov havsmodell.";
-  } else note += "Tryck på ”Hämta läget” för att få prognos för dagarna framåt.";
+  var note = "50 är ett vanligt läge för dig, högre är bättre. Bygger på " + fmt(S.tot.h) + " fiskade timmar och " + S.tot.n + " hugg. " +
+    (S.tot.h < 40 ? "Än så länge styr mest grundantagandena: högt och stigande hav, lågt ljus och fallande tryck. " : "Din logg väger nu tyngre än grundantagandena. ");
+  if (forecast && forecast.harHav) note += forecast.havOkalibrerad ? "Havsprognosen är inte justerad mot Viken den här gången." : "Havsprognosen är en grov modell justerad mot Viken.";
   el.innerHTML = html + '<p class="note">' + esc(note) + '</p>';
 }
 
-/* ---------- Loggbok ---------- */
-function fmtWhen(w){ if (!w) return "Okänt datum"; var d = new Date(w); if (isNaN(d)) return String(w); return d.toLocaleDateString("sv-SE", { day: "numeric", month: "short", year: "numeric" }) + " " + hm(d); }
-function sortKey(s){ var d = new Date(s.when); return isNaN(d) ? 0 : d.getTime(); }
-function groupRate(key){
-  var g = {};
-  sessions.forEach(function(s){ var v = (s[key] || "").trim(); if (!v) return; var k = v.toLowerCase(); g[k] = g[k] || { name: v, n: 0, hits: 0, hugg: 0 }; g[k].n++; var h = num(s.hugg) || 0; g[k].hugg += h; if (h > 0) g[k].hits++; });
-  return Object.keys(g).map(function(k){ return g[k]; }).sort(function(a, b){ return b.n - a.n; });
+/* ---------- Pågående pass ---------- */
+var UTFALL = ["Hugg", "Landad", "Tappad", "Miss", "Följare"], ARTER = ["", "Gädda", "Havsöring", "Abborre", "Lax", "Id", "Horngädda", "Annan"];
+function opts(list, val){ return list.map(function(o){ return '<option' + (o === val ? " selected" : "") + ' value="' + esc(o) + '">' + esc(o || "Art") + '</option>'; }).join(""); }
+function renderPass(){
+  $("aktivBox").hidden = !aktiv; $("startBox").hidden = !!aktiv || !!form; $("formBox").hidden = !form;
+  if (aktiv){
+    $("aktivStart").textContent = "Startade " + hm(aktiv.start) + ", " + dur(Date.now() - aktiv.start);
+    $("aktivHugg").innerHTML = aktiv.hugg.length ? aktiv.hugg.map(function(h, i){
+      return '<div class="hrow"><span class="ht">' + hm(h.t) + '</span><select data-i="' + i + '" data-f="utfall">' + opts(UTFALL, h.utfall) + '</select><select data-i="' + i + '" data-f="art">' + opts(ARTER, h.art) + '</select></div>';
+    }).join("") : '<p class="muted">Tryck på Hugg! direkt när det händer, så sparas exakt tid. Justera utfallet efteråt.</p>';
+  }
+  $("tabPass").textContent = aktiv ? "Pass ●" : "Pass";
 }
-function renderBook(){
-  var n = sessions.length, withHit = 0, total = 0;
-  sessions.forEach(function(s){ var h = num(s.hugg) || 0; total += h; if (h > 0) withHit++; });
-  $("stats").innerHTML = '<div><b>' + n + '</b><span>pass</span></div><div><b class="hit">' + total + '</b><span>hugg totalt</span></div><div><b>' + (n ? Math.round(withHit/n*100) : 0) + ' %</b><span>pass med hugg</span></div>';
-  var bd = "";
-  [["strom", "Strömdrag"], ["trycktrend", "Trycktrend"], ["ljusvader", "Ljus & väder"]].forEach(function(p){
-    var rows = groupRate(p[0]); if (!rows.length) return;
-    bd += '<div class="tbl"><table><thead><tr><th>' + p[1] + '</th><th>Pass</th><th>Med hugg</th><th>Hugg/pass</th></tr></thead><tbody>' +
-      rows.slice(0, 6).map(function(r){ return '<tr><td>' + esc(r.name) + '</td><td class="num">' + r.n + '</td><td class="num">' + r.hits + '</td><td class="num">' + (r.hugg/r.n).toLocaleString("sv-SE", { maximumFractionDigits: 1 }) + '</td></tr>'; }).join("") + '</tbody></table></div>';
-  });
-  $("breakdown").innerHTML = n >= 3 ? bd : "";
-  var list = $("list");
-  if (!n){ list.innerHTML = '<div class="empty"><p><b>Loggboken är tom.</b></p><p class="muted">Logga ditt första pass under ”Logga pass”.</p></div>'; return; }
-  list.innerHTML = sessions.slice().sort(function(a, b){ return sortKey(b) - sortKey(a); }).map(function(s){
-    var h = num(s.hugg) || 0;
-    function v(x, u, d){ return x !== "" && x != null ? fmtNum(x, d) + u : ""; }
-    var rows = [["Plats / vinkel", esc(s.plats)], ["Sikt", v(s.sikt, " cm", 0)], ["Flöde", v(s.flode, " m³/s")], ["Vattenstånd", v(s.vattenstand, " cm", 0)], ["Strömdrag", esc(s.strom)],
-      ["Vattentemp", v(s.vattentemp, " °C")], ["Lufttryck", [v(s.tryck, " hPa", 0), esc(s.trycktrend)].filter(Boolean).join(", ")], ["Ljus & väder", esc(s.ljusvader)], ["Rigg / bete", esc(s.rigg)],
-      ["Resultat", esc(s.resultat || (h + " hugg" + (s.art ? ", " + s.art : "")))], ["Analys", esc(s.analys)], ["Mätnotering", esc(s.matnotering)]].filter(function(r){ return r[1]; });
-    return '<details class="entry"><summary><span class="e-when">' + esc(fmtWhen(s.when)) + '</span><span class="e-res' + (h ? ' hit' : '') + '">' + h + '<small>' + (h ? esc(s.art || "hugg") : "hugg") + '</small></span>' +
-      '<span class="e-meta">' + esc([s.plats, s.strom, s.ljusvader].filter(Boolean).join(", ")) + '</span></summary>' +
-      '<div class="e-body"><dl>' + rows.map(function(r){ return '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>'; }).join("") + '</dl>' +
-      '<div class="row"><button class="btn small" data-edit="' + esc(s.id) + '">Ändra</button><button class="btn small" data-del="' + esc(s.id) + '">Ta bort</button></div></div></details>';
-  }).join("");
-}
-function renderAll(){ renderMeasures(); renderScan(); renderSimilar(); renderBook(); }
-function persist(){ if (!save(K.pass, sessions)) toast("Kunde inte spara, lagringen är full"); renderAll(); }
-function newId(){ return "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+$("startNow").addEventListener("click", function(){ aktiv = { start: Date.now(), hugg: [] }; save(K.aktiv, aktiv); renderPass(); toast("Pass startat"); });
+$("startLage").addEventListener("click", function(){ aktiv = { start: Date.now(), hugg: [] }; save(K.aktiv, aktiv); renderPass(); showTab("pass"); toast("Pass startat"); });
+$("huggBtn").addEventListener("click", function(){
+  aktiv.hugg.push({ t: Date.now(), utfall: "Hugg", art: "Gädda" }); save(K.aktiv, aktiv); renderPass();
+  if (navigator.vibrate) navigator.vibrate(60); toast("Hugg " + hm(Date.now()));
+});
+$("aktivHugg").addEventListener("change", function(ev){ var s = ev.target; if (!s.dataset.f) return; aktiv.hugg[+s.dataset.i][s.dataset.f] = s.value; save(K.aktiv, aktiv); });
+$("endBtn").addEventListener("click", function(){
+  var p = blankPass(); p.start = aktiv.start; p.end = Date.now(); p.hugg = aktiv.hugg.slice();
+  aktiv = null; localStorage.removeItem(K.aktiv); openForm(p, true);
+});
+$("cancelAktiv").addEventListener("click", function(){ if (!confirm("Avbryta passet utan att spara?")) return; aktiv = null; localStorage.removeItem(K.aktiv); renderPass(); });
+$("efterhand").addEventListener("click", function(){ var p = blankPass(); p.end = Math.floor(Date.now()/(15*60e3))*15*60e3; p.start = p.end - 2*H; openForm(p, true); });
 
 /* ---------- Formulär ---------- */
-var FIELDS = ["when", "plats", "sikt", "flode", "vattenstand", "strom", "vattentemp", "tryck", "trycktrend", "ljusvader", "rigg", "hugg", "art", "analys"];
-function resetForm(){
-  editingId = null;
-  FIELDS.forEach(function(f){ $(f).value = ""; });
-  $("plats").value = "Gåsahalsen"; $("hugg").value = "0"; $("when").value = localIso(new Date());
-  var ph = lightPhase(new Date(), sunTimes(new Date())).label; $("ljusvader").value = ph === "–" ? "" : ph;
-  $("formTitle").textContent = "Nytt pass"; $("saveBtn").textContent = "Spara pass"; $("cancelEdit").hidden = true;
+var STROM = ["", "Kraftigt utgående", "Utgående", "Svagt utgående", "Stilla", "Ingående"];
+var BETE = ["", "Shad", "Grub", "Kräftimitation", "Jerkbait", "Wobbler", "Skeddrag", "Spinnare", "Fluga", "Annat"];
+var FARG = ["", "Naturlig", "Motoroil", "Chartreuse/gul", "Vit/pärla", "Svart", "Firetiger", "Röd/orange", "Annan"];
+function blankPass(){
+  var last = sessions.slice().sort(function(a, b){ return b.start - a.start; })[0] || {};
+  return { id: null, start: null, end: null, plats: last.plats || "Gåsahalsen", sikt: "", strom: "", bete: last.bete || "", modell: last.modell || "", farg: last.farg || "", vikt: last.vikt != null ? last.vikt : "", hugg: [], analys: "" };
 }
-function fillLatest(){
-  if (!latest) return false;
-  ["flode", "vattenstand", "vattentemp", "tryck"].forEach(function(f){ if (latest[f] != null && $(f).value === "") $(f).value = String(latest[f]).replace(".", ","); });
-  if (latest.trycktrend && !$("trycktrend").value) $("trycktrend").value = latest.trycktrend;
-  if (latest.vind && $("ljusvader").value.indexOf(latest.vind) < 0) $("ljusvader").value = [$("ljusvader").value, latest.vind].filter(Boolean).join(", ");
-  return true;
+function platser(){
+  var set = {}; (load(K.platser, []) || []).concat(["Gåsahalsen", "Gåsahalsen, ytterkurvan", "Gåsahalsen, tvärs över ån", "Mynningen"]).concat(sessions.map(function(s){ return s.plats; })).forEach(function(p){ if (p) set[p] = 1; });
+  return Object.keys(set);
 }
-function matnotering(){
-  if (!latest) return "";
-  var L = latest, p = [];
-  if (L.flode != null) p.push("Flöde " + fmtNum(L.flode) + " m³/s (" + (L.flodeStn || "") + ")");
-  if (L.vattenstand != null) p.push("Vattenstånd " + fmtNum(L.vattenstand, 0) + " cm" + (L.vattenstandTrend ? " " + L.vattenstandTrend.toLowerCase() : "") + " (" + (L.vattenstandStn || "Viken") + ")");
-  if (L.vattentemp != null) p.push("Vattentemp " + fmtNum(L.vattentemp) + " °C (" + (L.vattentempStn || "") + ")");
-  if (L.tryck != null) p.push("Tryck " + fmtNum(L.tryck, 0) + " hPa " + (L.trycktrend || "").toLowerCase() + " (" + (L.tryckStn || "") + ")");
-  return "Hämtat " + hm(new Date(L.updatedAt)) + ": " + p.join(". ") + ".";
+function openForm(p, isNew){
+  form = JSON.parse(JSON.stringify(p)); form._new = !!isNew; editing = p.id;
+  $("formTitle").textContent = isNew ? "Spara pass" : "Ändra pass";
+  $("f_start").value = localIso(form.start); $("f_end").value = localIso(form.end);
+  var pl = platser(); if (form.plats && pl.indexOf(form.plats) < 0) pl.push(form.plats);
+  $("f_plats").innerHTML = opts(pl, form.plats) + '<option value="__ny">Ny plats…</option>';
+  $("f_sikt").value = form.sikt == null ? "" : String(form.sikt).replace(".", ",");
+  $("f_strom").innerHTML = opts(STROM, form.strom).replace('value="">Art', 'value="">Välj');
+  $("f_bete").innerHTML = opts(BETE, form.bete).replace('value="">Art', 'value="">Välj');
+  $("f_farg").innerHTML = opts(FARG, form.farg).replace('value="">Art', 'value="">Välj');
+  $("f_modell").value = form.modell || ""; $("f_vikt").value = form.vikt == null ? "" : String(form.vikt).replace(".", ",");
+  $("f_analys").value = form.analys || "";
+  var ml = {}; sessions.forEach(function(s){ if (s.modell) ml[s.modell] = 1; });
+  $("modellList").innerHTML = Object.keys(ml).map(function(m){ return '<option>' + esc(m) + '</option>'; }).join("");
+  $("f_old").innerHTML = form.riggText || form.matnotering ? '<p class="note">Från gamla loggen: ' + esc([form.riggText, form.matnotering].filter(Boolean).join(". ")) + '</p>' : "";
+  renderFormHugg(); renderFormAuto();
+  renderPass(); showTab("pass");
 }
-function showTab(name){
-  document.querySelectorAll("nav button").forEach(function(b){ b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false"); });
-  ["lage", "logga", "bok"].forEach(function(s){ $(s).hidden = s !== name; });
-  window.scrollTo(0, 0);
+function renderFormHugg(){
+  $("f_hugg").innerHTML = form.hugg.length ? form.hugg.map(function(h, i){
+    return '<div class="hrow"><input type="time" data-i="' + i + '" data-f="t" value="' + (h.t ? hm(h.t) : "") + '" aria-label="Tid">' +
+      '<select data-i="' + i + '" data-f="utfall">' + opts(UTFALL, h.utfall) + '</select><select data-i="' + i + '" data-f="art">' + opts(ARTER, h.art) + '</select>' +
+      '<button type="button" class="x" data-del="' + i + '" aria-label="Ta bort hugg">×</button></div>';
+  }).join("") : '<p class="muted small">Inga hugg.</p>';
 }
-document.querySelectorAll("nav button").forEach(function(b){ b.addEventListener("click", function(){ showTab(b.dataset.tab); }); });
-$("fetchBtn").addEventListener("click", fetchAll);
-$("startLog").addEventListener("click", function(){ resetForm(); fillLatest(); showTab("logga"); });
-$("fillBtn").addEventListener("click", function(){ toast(fillLatest() ? "Mätvärden ifyllda" : "Hämta läget först"); });
-$("cancelEdit").addEventListener("click", function(){ resetForm(); showTab("bok"); });
-$("form").addEventListener("submit", function(ev){
-  ev.preventDefault();
-  var o = {};
-  FIELDS.forEach(function(f){ o[f] = $(f).value.trim(); });
-  ["sikt", "flode", "vattenstand", "vattentemp", "tryck", "hugg"].forEach(function(f){ var n = num(o[f]); o[f] = n == null ? "" : n; });
-  if (o.hugg === "") o.hugg = 0;
-  o.resultat = o.hugg + " hugg" + (o.art ? " / " + o.art : "");
-  if (editingId){
-    var prev = sessions.find(function(s){ return s.id === editingId; }) || {};
-    o.id = editingId; o.createdAt = prev.createdAt; o.matnotering = prev.matnotering || "";
-    sessions = sessions.map(function(s){ return s.id === editingId ? o : s; });
-  } else {
-    o.id = newId(); o.createdAt = new Date().toISOString(); o.matnotering = matnotering();
-    sessions.push(o);
-  }
-  var was = editingId; persist(); toast(was ? "Ändring sparad" : "Pass sparat"); resetForm(); showTab("bok");
+function timeInPass(val){
+  var m = /^(\d{1,2}):(\d{2})$/.exec(val || ""); if (!m) return null;
+  var d = new Date(form.start); d.setHours(+m[1], +m[2], 0, 0);
+  if (d.getTime() < form.start - 2*H) d.setTime(d.getTime() + DAY);
+  return d.getTime();
+}
+$("f_hugg").addEventListener("change", function(ev){
+  var s = ev.target, i = +s.dataset.i; if (!s.dataset.f) return;
+  form.hugg[i][s.dataset.f] = s.dataset.f === "t" ? timeInPass(s.value) : s.value;
 });
-$("list").addEventListener("click", function(ev){
-  var ed = ev.target.closest("[data-edit]"), dl = ev.target.closest("[data-del]");
-  if (ed){
-    var s = sessions.find(function(x){ return x.id === ed.dataset.edit; }); if (!s) return;
-    FIELDS.forEach(function(f){ $(f).value = s[f] == null ? "" : String(s[f]); });
-    if (s.when && !isNaN(new Date(s.when))) $("when").value = localIso(new Date(s.when));
-    ["sikt", "flode", "vattenstand", "vattentemp", "tryck"].forEach(function(f){ $(f).value = $(f).value.replace(".", ","); });
-    editingId = s.id; $("formTitle").textContent = "Ändra pass"; $("saveBtn").textContent = "Spara ändring"; $("cancelEdit").hidden = false;
-    showTab("logga");
+$("f_hugg").addEventListener("click", function(ev){ var b = ev.target.closest("[data-del]"); if (b){ form.hugg.splice(+b.dataset.del, 1); renderFormHugg(); } });
+$("addHugg").addEventListener("click", function(){ form.hugg.push({ t: form.start ? Math.min(form.end || Date.now(), form.start + H) : null, utfall: "Hugg", art: "Gädda" }); renderFormHugg(); });
+$("f_plats").addEventListener("change", function(){
+  if (this.value !== "__ny") return;
+  var n = (prompt("Namn på platsen") || "").trim();
+  if (n){ var l = load(K.platser, []); l.push(n); save(K.platser, l); form.plats = n; $("f_plats").innerHTML = opts(platser(), n) + '<option value="__ny">Ny plats…</option>'; }
+  else this.value = form.plats;
+});
+function renderFormAuto(){
+  var a = form.auto, el = $("f_auto");
+  if (form._hamtar){ el.innerHTML = '<p class="muted">Hämtar mätdata för passet…</p>'; return; }
+  el.innerHTML = a ? condSummary(form, true) + (a.saknas && a.saknas.length ? '<p class="note">Saknas: ' + esc(a.saknas.join(", ")) + '</p>' : "")
+    : '<p class="muted small">Hämtas automatiskt när du sparar.</p>';
+}
+$("refetch").addEventListener("click", function(){ readForm(); fetchFor(form, function(){ renderFormAuto(); }); });
+function readForm(){
+  form.start = new Date($("f_start").value).getTime(); form.end = new Date($("f_end").value).getTime();
+  form.plats = $("f_plats").value === "__ny" ? form.plats : $("f_plats").value;
+  form.sikt = num($("f_sikt").value); form.strom = $("f_strom").value; form.bete = $("f_bete").value; form.modell = $("f_modell").value.trim();
+  form.farg = $("f_farg").value; form.vikt = num($("f_vikt").value); form.analys = $("f_analys").value.trim();
+}
+function fetchFor(p, cb){
+  if (!p.start || !p.end || p.end <= p.start){ toast("Kolla start och slut"); return; }
+  p._hamtar = true; if (cb) cb();
+  fetchConditions(p.start, p.end).then(function(r){ p.auto = r; }).catch(function(){}).then(function(){ p._hamtar = false; if (cb) cb(); });
+}
+$("passForm").addEventListener("submit", function(ev){
+  ev.preventDefault(); readForm();
+  if (!form.start || !form.end || isNaN(form.start) || isNaN(form.end) || form.end <= form.start){ toast("Slut måste vara efter start"); return; }
+  var p = JSON.parse(JSON.stringify(form)), changedWindow = true;
+  delete p._new; delete p._hamtar;
+  if (!p.id){ p.id = newId(); p.createdAt = Date.now(); }
+  else { var prev = sessions.find(function(s){ return s.id === p.id; }); changedWindow = !prev || prev.start !== p.start || prev.end !== p.end || !p.auto; }
+  p.hugg.sort(function(a, b){ return (a.t || 0) - (b.t || 0); });
+  sessions = sessions.filter(function(s){ return s.id !== p.id; }).concat([p]);
+  persist(); form = null; editing = null; renderPass(); showTab("bok"); toast("Pass sparat");
+  if (changedWindow || !p.auto) backfill([p.id]);
+});
+$("cancelForm").addEventListener("click", function(){ form = null; editing = null; renderPass(); });
+
+/* ---------- Loggbok ---------- */
+function condSummary(p, detailed){
+  var c = condFor(p, p.start), a = p.auto || {}, s = a.sum || {}, chips = [];
+  if (c.ljus) chips.push(c.ljus);
+  if (c.niva != null) chips.push("Hav " + sign(c.niva, 0) + " cm" + (c.nivaTrend ? " " + c.nivaTrend.toLowerCase() : "") + (s.nivaMin != null && s.nivaMax != null && s.nivaMax - s.nivaMin >= 5 ? " (" + sign(s.nivaMin, 0) + " till " + sign(s.nivaMax, 0) + ")" : ""));
+  if (c.flode != null) chips.push("Flöde " + fmt(c.flode) + (c.flodeTrend ? " " + c.flodeTrend.toLowerCase() : ""));
+  if (c.tryckTrend || c.tryck != null) chips.push("Tryck " + (c.tryck != null ? fmt(c.tryck, 0) + " " : "") + (c.tryckTrend || "").toLowerCase());
+  if (c.moln != null) chips.push("Moln " + fmt(c.moln, 0) + " %");
+  if (detailed){
+    if (s.vtemp != null) chips.push("Vatten " + fmt(s.vtemp) + " °C");
+    if (s.regn72 != null) chips.push("Regn 3 dygn " + fmt(s.regn72) + " mm");
+    if (s.vind) chips.push("Vind " + s.vind);
+    if (s.flode72 != null) chips.push("Flöde 3 dygn " + sign(s.flode72, 0) + " %");
   }
+  return '<div class="chips">' + chips.map(function(x){ return '<span>' + esc(x) + '</span>'; }).join("") + '</div>';
+}
+function renderBook(){
+  var list = $("list"), S = stats();
+  $("stats").innerHTML = '<div><b>' + S.tot.pass + '</b><span>pass</span></div><div><b>' + fmt(S.tot.h) + '</b><span>timmar</span></div><div><b class="hit">' + S.tot.n + '</b><span>hugg</span></div><div><b>' + fmt(S.R, 2) + '</b><span>hugg per timme</span></div>';
+  if (!sessions.length){ list.innerHTML = '<div class="empty"><p><b>Loggboken är tom.</b></p><p class="muted">Starta ett pass under Pass.</p></div>'; return; }
+  list.innerHTML = sessions.slice().sort(function(a, b){ return b.start - a.start; }).map(function(p){
+    var n = (p.hugg || []).filter(isHugg).length, hrs = passHours(p);
+    var hugg = (p.hugg || []).map(function(h){
+      var c = h.t ? condFor(p, h.t) : null;
+      return '<li><b>' + (h.t ? hm(h.t) : "Okänd tid") + '</b> ' + esc([h.utfall, h.art].filter(Boolean).join(", ")) +
+        (c ? '<span class="muted small"> · ' + esc([c.ljus, c.niva != null ? "hav " + sign(c.niva, 0) + (c.nivaTrend ? " " + c.nivaTrend.toLowerCase() : "") : ""].filter(Boolean).join(", ")) + '</span>' : "") + '</li>';
+    }).join("");
+    var rig = [p.bete, p.modell, p.farg, p.vikt != null && p.vikt !== "" ? fmt(p.vikt) + " g" : ""].filter(Boolean).join(", ");
+    return '<details class="entry"><summary><span class="e-when">' + esc(dateLong(p.start)) + " " + hm(p.start) + "–" + hm(p.end) + '</span>' +
+      '<span class="e-res' + (n ? ' hit' : '') + '">' + n + '<small>hugg</small></span><span class="e-meta">' + esc([p.plats, fmt(hrs) + " h", n ? fmt(n/hrs, 2) + " hugg/h" : ""].filter(Boolean).join(", ")) + '</span></summary>' +
+      '<div class="e-body">' + condSummary(p, true) + (p._hamtar ? '<p class="muted small">Hämtar mätdata…</p>' : "") +
+      '<dl>' + [["Sikt", p.sikt != null && p.sikt !== "" ? fmt(p.sikt, 0) + " cm" : ""], ["Strömdrag", p.strom], ["Rigg", rig], ["Rigg (gammal)", p.riggText], ["Analys", p.analys], ["Mätnotering", p.matnotering]]
+        .filter(function(r){ return r[1]; }).map(function(r){ return '<dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join("") + '</dl>' +
+      (hugg ? '<ul class="hlist">' + hugg + '</ul>' : "") +
+      '<div class="row"><button class="btn small" data-edit="' + esc(p.id) + '">Ändra</button><button class="btn small" data-fetch="' + esc(p.id) + '">Hämta mätdata igen</button><button class="btn small" data-del="' + esc(p.id) + '">Ta bort</button></div></div></details>';
+  }).join("");
+}
+$("list").addEventListener("click", function(ev){
+  var ed = ev.target.closest("[data-edit]"), dl = ev.target.closest("[data-del]"), fe = ev.target.closest("[data-fetch]");
+  if (ed){ var p = sessions.find(function(x){ return x.id === ed.dataset.edit; }); if (p) openForm(p, false); }
+  if (fe) backfill([fe.dataset.fetch], true);
   if (dl && confirm("Ta bort passet? Det går inte att ångra.")){ sessions = sessions.filter(function(s){ return s.id !== dl.dataset.del; }); persist(); toast("Pass borttaget"); }
 });
+var queue = [], running = false;
+function backfill(ids, loud){
+  ids.forEach(function(id){ if (queue.indexOf(id) < 0) queue.push(id); });
+  if (running) return; running = true;
+  (function next(){
+    var id = queue.shift(); if (!id){ running = false; renderAll(); return; }
+    var p = sessions.find(function(s){ return s.id === id; }); if (!p) return next();
+    p._hamtar = true; renderBook();
+    fetchConditions(p.start, p.end).then(function(r){ p.auto = r; if (loud) toast(r.saknas.length ? "Saknas: " + r.saknas.join(", ") : "Mätdata uppdaterad"); })
+      .catch(function(){ if (loud) toast("Kunde inte hämta mätdata"); })
+      .then(function(){ delete p._hamtar; persist(); next(); });
+  })();
+}
 
-/* ---------- Export, säkerhetskopia, import ---------- */
+/* ---------- Analys ---------- */
+function renderAnalys(){
+  var S = stats(), el = $("analysBody");
+  if (!sessions.length){ el.innerHTML = '<p class="muted">Logga några pass först.</p>'; return; }
+  var html = '<p class="muted">' + S.tot.pass + ' pass, ' + fmt(S.tot.h) + ' timmar, ' + S.tot.n + ' hugg varav ' + S.tot.landade + ' landade' + (S.tot.foljare ? ', ' + S.tot.foljare + ' följare' : '') + '. Snitt ' + fmt(S.R, 2) + ' hugg per timme.</p>';
+  if (S.tot.pass < 20) html += '<p class="note warn">Med ' + S.tot.pass + ' pass är skillnaderna nedan mest slump. Se dem som ledtrådar, inte som svar. Runt 20–30 pass börjar de gå att lita på.</p>';
+  html += '<p class="muted small">Index 100 betyder ditt snitt. Över 100 betyder fler hugg per timme än vanligt i det läget.</p>';
+  FACTORS.concat(PASSFACT).forEach(function(f){
+    var rows = Object.keys(S[f.k]).map(function(b){ var o = S[f.k][b]; return { b: b, h: o.h, n: o.n }; }).filter(function(r){ return r.h > 0 || r.n > 0; });
+    if (!rows.length) return;
+    rows.sort(function(a, b){ return (b.h ? b.n/b.h : 0) - (a.h ? a.n/a.h : 0); });
+    html += '<h3>' + esc(f.namn) + '</h3><div class="tbl"><table><thead><tr><th></th><th>Timmar</th><th>Hugg</th><th>Hugg/h</th><th>Index</th></tr></thead><tbody>' +
+      rows.map(function(r){ var rate = r.h ? r.n/r.h : 0, idx = S.R ? Math.round(rate/S.R*100) : null;
+        return '<tr><td>' + esc(r.b) + '</td><td class="num">' + fmt(r.h) + '</td><td class="num">' + r.n + '</td><td class="num">' + fmt(rate, 2) + '</td><td class="num' + (idx != null && idx >= 130 ? ' hit' : '') + '">' + (idx == null ? "–" : idx) + '</td></tr>'; }).join("") +
+      '</tbody></table></div>';
+  });
+  var noT = sessions.reduce(function(a, p){ return a + (p.hugg || []).filter(function(h){ return !h.t; }).length; }, 0);
+  if (noT) html += '<p class="note">' + noT + ' hugg saknar klockslag och räknas mitt i sitt pass. Lägg in tiden under Ändra om du minns den.</p>';
+  el.innerHTML = html;
+}
+
+/* ---------- Export och säkerhetskopia ---------- */
 function download(name, text, type){
   var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: type })); a.download = name;
   document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 }
-var HEAD = ["Datum & Tid", "Plats / Vinkel", "Sikt (cm)", "Flöde (m³/s) [SMHI P554]", "Vattenstånd (cm RH2000) [SMHI Viken]", "Strömdrag / Riktning", "Vattentemp (°C) [SMHI/Obs]", "Lufttryck & Trend [SMHI Ängelholm]", "Ljus & Väder", "Rigg / Bete / Teknik", "Resultat (Hugg/Art)", "Analys & Notering"];
 function cell(v){ v = v == null ? "" : String(v); return /[";\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
 function dec(v){ return v === "" || v == null ? "" : String(v).replace(".", ","); }
 $("exportBtn").addEventListener("click", function(){
   if (!sessions.length){ toast("Inga pass att exportera"); return; }
-  var rows = sessions.slice().sort(function(a, b){ return sortKey(a) - sortKey(b); }).map(function(s){
-    var d = new Date(s.when);
-    return [isNaN(d) ? s.when : localIso(d).replace("T", " "), s.plats, dec(s.sikt), dec(s.flode), dec(s.vattenstand), s.strom, dec(s.vattentemp),
-      [dec(s.tryck), s.trycktrend].filter(Boolean).join(" "), s.ljusvader, s.rigg, s.resultat, s.analys].map(cell).join(";");
+  var head = ["Start", "Slut", "Timmar", "Plats", "Sikt (cm)", "Strömdrag", "Bete", "Modell", "Färg", "Vikt (g)", "Hugg", "Landade", "Hugg/h", "Hugg-tider", "Ljus vid start", "Havsnivå (cm)", "Havet", "Flöde (m³/s)", "Flöde", "Flöde 3 dygn (%)", "Vattentemp (°C)", "Lufttryck (hPa)", "Trycktrend", "Molnighet (%)", "Regn 3 dygn (mm)", "Vind", "Analys"];
+  var rows = sessions.slice().sort(function(a, b){ return a.start - b.start; }).map(function(p){
+    var c = condFor(p, p.start), s = (p.auto && p.auto.sum) || {}, n = (p.hugg || []).filter(isHugg).length, hrs = passHours(p);
+    return [localIso(p.start).replace("T", " "), localIso(p.end).replace("T", " "), dec(round(hrs, 2)), p.plats, dec(p.sikt), p.strom, p.bete, p.modell, p.farg, dec(p.vikt), n,
+      (p.hugg || []).filter(function(h){ return h.utfall === "Landad"; }).length, dec(round(n/hrs, 2)),
+      (p.hugg || []).map(function(h){ return (h.t ? hm(h.t) : "?") + " " + [h.utfall, h.art].filter(Boolean).join(" "); }).join(", "),
+      c.ljus, dec(c.niva), c.nivaTrend, dec(c.flode), c.flodeTrend, dec(s.flode72), dec(s.vtemp), dec(c.tryck), c.tryckTrend, dec(c.moln), dec(s.regn72), s.vind, p.analys].map(cell).join(";");
   });
-  download("fiskelogg-gasahalsen.csv", "\ufeff" + HEAD.map(cell).join(";") + "\r\n" + rows.join("\r\n"), "text/csv;charset=utf-8");
+  download("fiskelogg-gasahalsen.csv", "\ufeff" + head.map(cell).join(";") + "\r\n" + rows.join("\r\n"), "text/csv;charset=utf-8");
 });
-$("backupBtn").addEventListener("click", function(){ download("fiskelogg-backup-" + localIso(new Date()).slice(0, 10) + ".json", JSON.stringify({ pass: sessions }, null, 1), "application/json"); });
+$("backupBtn").addEventListener("click", function(){ download("fiskelogg-backup-" + dstr(Date.now()) + ".json", JSON.stringify({ version: 2, pass: sessions }, null, 1), "application/json"); });
 $("restoreFile").addEventListener("change", function(){
   var f = this.files[0]; if (!f) return;
   var r = new FileReader();
   r.onload = function(){
     try {
-      var data = JSON.parse(r.result), incoming = data.pass || [], ids = {}, added = 0;
+      var data = JSON.parse(r.result), incoming = (data.pass || []).map(migrate), ids = {}, added = 0;
       sessions.forEach(function(s){ ids[s.id] = 1; });
       incoming.forEach(function(s){ if (s && s.id && !ids[s.id]){ sessions.push(s); added++; } });
       persist(); toast(added + " pass inlästa");
+      backfill(incoming.filter(function(p){ return !p.auto && p.start > Date.now() - 110*DAY; }).map(function(p){ return p.id; }));
     } catch(e){ toast("Filen gick inte att läsa"); }
   };
   r.readAsText(f); this.value = "";
 });
-function parseWhen(v){
-  v = (v || "").trim(); if (!v) return "";
-  var m = v.match(/(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T,]+(\d{1,2})[:.](\d{2}))?/);
-  if (m) return m[1] + "-" + pad(+m[2]) + "-" + pad(+m[3]) + "T" + pad(+(m[4] || 0)) + ":" + (m[5] || "00");
-  m = v.match(/(\d{1,2})[\/.](\d{1,2})[\/.](\d{2,4})(?:[ ,]+(\d{1,2})[:.](\d{2}))?/);
-  if (m){ var y = m[3].length === 2 ? "20" + m[3] : m[3]; return y + "-" + pad(+m[2]) + "-" + pad(+m[1]) + "T" + pad(+(m[4] || 0)) + ":" + (m[5] || "00"); }
-  return v;
-}
-$("importBtn").addEventListener("click", function(){
-  var rows = $("importText").value.split(/\r?\n/).map(function(l){ return l.split("\t"); }).filter(function(c){ return c.length >= 3 && (c[0] || "").trim() && !/^datum/i.test(c[0].trim()); });
-  if (!rows.length){ $("importNote").textContent = "Hittade inga rader. Kopiera direkt från kalkylarket så att kolumnerna separeras med tabb."; return; }
-  rows.forEach(function(c){
-    var tr = c[7] || "", res = (c[10] || "").trim(), hm0 = res.match(/\d+/);
-    var o = { id: newId(), when: parseWhen(c[0]), plats: (c[1] || "").trim(), sikt: num(c[2]), flode: num(c[3]), vattenstand: num(c[4]), strom: (c[5] || "").trim(),
-      vattentemp: num(c[6]), tryck: num(tr), trycktrend: /stig/i.test(tr) ? "Stigande" : /fall|sjunk/i.test(tr) ? "Fallande" : /stab|oförändr/i.test(tr) ? "Stabilt" : "",
-      ljusvader: (c[8] || "").trim(), rigg: (c[9] || "").trim(), hugg: hm0 ? +hm0[0] : 0, art: res.replace(/^\s*\d+\s*(hugg)?\s*[\/,:-]?\s*/i, "").trim(),
-      resultat: res, analys: (c[11] || "").trim(), matnotering: "Importerat. Original: " + [c[2], c[3], c[4], c[6], tr].map(function(x){ return (x || "").trim(); }).join(" | "), createdAt: new Date().toISOString() };
-    ["sikt", "flode", "vattenstand", "vattentemp", "tryck"].forEach(function(f){ if (o[f] == null) o[f] = ""; });
-    sessions.push(o);
-  });
-  persist(); $("importNote").textContent = rows.length + " pass importerade."; $("importText").value = "";
-});
 
-/* ---------- Start ---------- */
-try { var _c = JSON.parse(localStorage.getItem("gh-stn") || "{}"); if (_c.flode){ delete _c.flode; localStorage.setItem("gh-stn", JSON.stringify(_c)); } } catch(e){}
-var SEED = [{"id": "p20260920-0900", "when": "2026-09-20T09:00", "plats": "Gåsahalsen (ytterkurva, vass mot håla)", "sikt": 60, "flode": 6.5, "vattenstand": 55, "strom": "Långsamt utåt, uppdämt", "vattentemp": 15, "tryck": 1010, "trycktrend": "Fallande", "ljusvader": "Mulet, regnstänk, SV 3–5 m/s", "rigg": "Hit Shad 8 cm / Pro Grub 6,5 cm (Motoroil), 7 g jiggskalle, 0,30 FC (1 m) / 0,10 flätlina", "hugg": 2, "art": "Gädda", "resultat": "1 gädda (vasskant), 1 tappad fisk (djuphåla)", "analys": "Högt havsvattenstånd dämde ån och fyllde vasskanten. Fallande tryck och dämpat ljus triggade aktivitet i droppet. Avskuren 0,10-lina mot bottensten kräver direkt spölyft och stenhård press i mothugget.", "matnotering": "Tid 09:00–11:00. Sikt ~60 cm. Flöde 6–7 m³/s. Vattenstånd +50 till +60 cm (stigande, topp +87). Vattentemp ~15 °C. Tryck ~1010 hPa, långsamt fallande.", "createdAt": "2026-09-25T12:00:00Z"}, {"id": "p20260925-1000", "when": "2026-09-25T10:00", "plats": "Gåsahalsen (kast tvärs över ån)", "sikt": 70, "flode": 5.5, "vattenstand": 12.5, "strom": "Mycket svagt / nära stilla", "vattentemp": 14, "tryck": 1017, "trycktrend": "Stabilt", "ljusvader": "Halvklart/sol, svag vind 2–3 m/s", "rigg": "Hit Shad 8 cm / Westin CreCraw 8,5 cm, Westin offset 7 g, 0,30 FC / 0,10 flätlina", "hugg": 0, "art": "", "resultat": "0 (Bompass)", "analys": "Lågt havsvattenstånd dränerade ån (ca 40 cm lägre än 20/9). Vassarna torrlagda, fisken borttvingad från kanterna och parkerad passiv i hålan under lunchsol och stabilt högtryck. 7 g gav snabb duns i stilla vatten.", "matnotering": "Tid 10:00–13:00. Sikt ~70 cm. Flöde 5–6 m³/s. Vattenstånd +10 till +15 cm (sjunkande, lågvatten +12). Vattentemp ~14 °C. Tryck ~1017 hPa, stabilt/högt.", "createdAt": "2026-09-25T12:00:00Z"}];
+/* ---------- Flytt från gamla formatet ---------- */
+function migrate(o){
+  if (!o || o.start) return o;
+  var start = new Date(o.when).getTime(), end = start + 2*H;
+  var m = /(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/.exec(o.matnotering || "");
+  if (m && !isNaN(start)){ var e = new Date(start); e.setHours(+m[3], +m[4], 0, 0); if (e.getTime() > start) end = e.getTime(); }
+  var st = o.strom || "", strom = /in(g|åt)/i.test(st) && !/ut/i.test(st) ? "Ingående" : /stilla/i.test(st) ? "Stilla" : /svag|långsam/i.test(st) ? "Svagt utgående" : /kraft/i.test(st) ? "Kraftigt utgående" : /ut/i.test(st) ? "Utgående" : "";
+  var n = num(o.hugg) || 0, hugg = [];
+  for (var i = 0; i < n; i++) hugg.push({ t: null, utfall: "Hugg", art: o.art || "" });
+  return { id: o.id || newId(), start: start, end: end, plats: o.plats || "Gåsahalsen", sikt: num(o.sikt), strom: strom, stromText: st,
+    bete: "", modell: "", farg: "", vikt: null, riggText: o.rigg || "", hugg: hugg, analys: o.analys || "", matnotering: o.matnotering || "", vader: o.ljusvader || "",
+    manuellt: { niva: num(o.vattenstand), flode: num(o.flode), tryck: num(o.tryck), tryckTrend: o.trycktrend || null, vtemp: num(o.vattentemp) }, createdAt: Date.now() };
+}
+var SEED = ([{"id": "p20260920-0900", "start": 0, "end": 0, "_s": "2026-09-20T09:00", "_e": "2026-09-20T11:00", "plats": "Gåsahalsen, ytterkurvan", "sikt": 60, "strom": "Svagt utgående", "stromText": "Långsamt utåt, uppdämt", "bete": "Shad", "modell": "Hit Shad 8 cm / Pro Grub 6,5 cm", "farg": "Motoroil", "vikt": 7, "riggText": "Hit Shad 8 cm / Pro Grub 6,5 cm (Motoroil), 7 g jiggskalle, 0,30 FC (1 m) / 0,10 flätlina", "hugg": [{"t": null, "utfall": "Landad", "art": "Gädda"}, {"t": null, "utfall": "Tappad", "art": ""}], "analys": "Högt havsvattenstånd dämde ån och fyllde vasskanten. Fallande tryck och dämpat ljus triggade aktivitet i droppet. Avskuren 0,10-lina mot bottensten kräver direkt spölyft och stenhård press i mothugget.", "matnotering": "Vattenstånd +50 till +60 cm (stigande, topp +87). Gäddan i vasskanten, tappad fisk i djuphålan.", "vader": "Mulet, regnstänk, SV 3–5 m/s", "manuellt": {"niva": 55, "flode": 6.5, "tryck": 1010, "tryckTrend": "Fallande", "vtemp": 15}}, {"id": "p20260925-1000", "start": 0, "end": 0, "_s": "2026-09-25T10:00", "_e": "2026-09-25T13:00", "plats": "Gåsahalsen, tvärs över ån", "sikt": 70, "strom": "Stilla", "stromText": "Mycket svagt / nära stilla", "bete": "Shad", "modell": "Hit Shad 8 cm / Westin CreCraw 8,5 cm", "farg": "", "vikt": 7, "riggText": "Hit Shad 8 cm / Westin CreCraw 8,5 cm, Westin offset 7 g, 0,30 FC / 0,10 flätlina", "hugg": [], "analys": "Lågt havsvattenstånd dränerade ån (ca 40 cm lägre än 20/9). Vassarna torrlagda, fisken borttvingad från kanterna och parkerad passiv i hålan under lunchsol och stabilt högtryck. 7 g gav snabb duns i stilla vatten.", "matnotering": "Vattenstånd +10 till +15 cm (sjunkande, lågvatten +12).", "vader": "Halvklart/sol, svag vind 2–3 m/s", "manuellt": {"niva": 12.5, "flode": 5.5, "tryck": 1017, "tryckTrend": "Stabilt", "vtemp": 14}}]).map(function(s){ s.start = new Date(s._s).getTime(); s.end = new Date(s._e).getTime(); delete s._s; delete s._e; s.createdAt = Date.now(); return s; });
+
+/* ---------- Flikar och start ---------- */
+function showTab(name){
+  document.querySelectorAll("nav button").forEach(function(b){ b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false"); });
+  ["lage", "pass", "bok", "analys"].forEach(function(s){ $(s).hidden = s !== name; });
+  if (name === "analys") renderAnalys();
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll("nav button").forEach(function(b){ b.addEventListener("click", function(){ showTab(b.dataset.tab); }); });
+$("fetchBtn").addEventListener("click", fetchLage);
+function persist(){ var clean = sessions.map(function(p){ var c = Object.assign({}, p); delete c._hamtar; return c; }); if (!save(K.pass, clean)) toast("Kunde inte spara, lagringen är full"); renderAll(); }
+function renderAll(){ renderMeasures(); renderScan(); renderBook(); renderPass(); if (!$("analys").hidden) renderAnalys(); }
+
 sessions = load(K.pass, null);
-if (!sessions){ sessions = SEED; save(K.pass, sessions); }
-latest = load(K.lage, null); forecast = load(K.prog, null);
-resetForm(); renderBand(); renderAll();
-setInterval(function(){ renderBand(); renderScan(); }, 60000);
-if (!latest || Date.now() - new Date(latest.updatedAt) > 30*60e3) fetchAll();
+if (!sessions){
+  var old = load(K.old, null);
+  sessions = old ? old.map(migrate) : [];
+  SEED.forEach(function(s){ var i = sessions.findIndex(function(x){ return x.id === s.id; }); if (i >= 0) sessions[i] = s; else if (!old) sessions.push(s); });
+  save(K.pass, sessions);
+}
+lage = load(K.lage, null); forecast = load(K.prog, null); aktiv = load(K.aktiv, null);
+renderBand(); renderAll();
+setInterval(function(){ renderBand(); if (aktiv) renderPass(); }, 30000);
+setInterval(renderScan, 5*60e3);
+if (!lage || Date.now() - lage.hamtat > 30*60e3) fetchLage();
+var missing = sessions.filter(function(p){ return !p.auto && p.start > Date.now() - 110*DAY; }).map(function(p){ return p.id; });
+if (missing.length) setTimeout(function(){ backfill(missing); }, 4000);
 })();
 
 </script>
