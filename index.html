@@ -319,20 +319,32 @@ function station(key, finder){
 }
 function forget(key){ var c = load(K.stn, {}); delete c[key]; save(K.stn, c); }
 
+// Flöde vid mynningen: SMHI:s modellpunkt 554 i Vattenwebb (hydronu).
+// Vattenwebb tillåter troligen inte anrop direkt från webbläsaren, så en GitHub Action
+// i samma repo hämtar punkten varje timme och sparar den som flode.json.
+var FLOW_POINT = 554;
+function repoRaw(){
+  var h = location.hostname, m = h.match(/^([^.]+)\.github\.io$/i), repo = (location.pathname.split("/")[1] || "");
+  var owner = m ? m[1] : "Ralsen90"; if (!m || !repo) repo = "Fiske";
+  return "https://raw.githubusercontent.com/" + owner + "/" + repo + "/main/flode.json";
+}
+function pointToFlow(d){
+  var c = d.chartData || d, hind = (c.coutHindcast && c.coutHindcast.data) || c.hindcast || [], fc = (c.coutForecast && c.coutForecast.data) || c.forecast || [];
+  var series = hind.concat(fc).map(function(r){ return { t: +r[0], v: num(r[1]) }; }).filter(function(r){ return r.v != null; }).sort(function(a, b){ return a.t - b.t; });
+  if (!series.length) throw new Error("tomt");
+  var now = Date.now(), cur = null, prev = null, ahead = null;
+  series.forEach(function(r){ if (r.t <= now) cur = r; });
+  if (!cur) cur = series[0];
+  series.forEach(function(r){ if (r.t <= cur.t - 20*36e5) prev = r; if (!ahead && r.t >= cur.t + 3*dayMs - 12*36e5) ahead = r; });
+  var d1 = prev ? cur.v - prev.v : null;
+  return { flode: Math.round(cur.v*10)/10, flodeT: cur.t, flodeStn: "Modellpunkt " + FLOW_POINT + " (mynningen)",
+    flodeTrend: d1 == null ? "" : d1 > 0.3 ? "Stigande" : d1 < -0.3 ? "Sjunkande" : "Stabilt",
+    flodeOm3: ahead ? Math.round(ahead.v*10)/10 : null, flodeMQ: c.mq != null ? c.mq : d.mq,
+    flodeSerie: series.filter(function(r){ return r.t >= now - 2*dayMs; }).map(function(r){ return [r.t, r.v]; }) };
+}
 function fetchFlow(){
-  return station("flode", function(){
-    function pick(p){ return stationList(SMHI.hyd, p).then(function(r){
-      var ronne = r.list.filter(function(s){ return s.active && /RÖNNE/i.test(s.catchmentName || ""); });
-      ronne.sort(function(a, b){ return (b.catchmentSize || 0) - (a.catchmentSize || 0); });
-      return ronne.length ? { param: p, id: ronne[0].id, name: ronne[0].name } : null;
-    }); }
-    return pick(2).then(function(s){ return s || pick(1); });
-  }).then(function(s){
-    return stationData(SMHI.hyd, s.param, s.id).then(function(v){
-      var x = lastAndBefore(v, 24);
-      return { flode: x.last.v, flodeT: x.last.t, flodeStn: s.name, flodeTrend: x.prev ? (x.last.v - x.prev.v > 0.3 ? "Stigande" : x.last.v - x.prev.v < -0.3 ? "Sjunkande" : "Stabilt") : "" };
-    }).catch(function(e){ forget("flode"); throw e; });
-  });
+  return getJSON("https://vattenwebb.smhi.se/hydronu/data/point?subid=" + FLOW_POINT).then(pointToFlow)
+    .catch(function(){ return getJSON(repoRaw() + "?t=" + Date.now()).then(pointToFlow); });
 }
 function ocParam(re){
   return getJSON(SMHI.oc + ".json").then(function(root){
@@ -471,7 +483,7 @@ function renderMeasures(){
   var el = $("measures");
   if (!latest){ el.innerHTML = '<p class="muted">Tryck på ”Hämta läget” för att hämta flöde, vattenstånd, tryck och vind från SMHI.</p>'; return; }
   var L = latest, html = '<p class="muted">Hämtat ' + esc(new Date(L.updatedAt).toLocaleString("sv-SE", { weekday: "short", hour: "2-digit", minute: "2-digit" })) + '</p><div class="facts">';
-  if (L.flode != null) html += fact(fmtNum(L.flode) + unit("m³/s"), "Flöde" + (L.flodeTrend ? ", " + L.flodeTrend.toLowerCase() : ""), (L.flodeStn || "") + ", " + ago(L.flodeT));
+  if (L.flode != null) html += fact(fmtNum(L.flode) + unit("m³/s"), "Flöde" + (L.flodeTrend ? ", " + L.flodeTrend.toLowerCase() : ""), (L.flodeStn || "") + (L.flodeOm3 != null ? ", om 3 dygn " + fmtNum(L.flodeOm3) + " m³/s" : "") + (L.flodeMQ != null ? ", normalt " + fmtNum(L.flodeMQ, 0) : ""));
   if (L.vattenstand != null) html += fact((L.vattenstand > 0 ? "+" : "") + fmtNum(L.vattenstand, 0) + unit("cm"), "Vattenstånd" + (L.vattenstandTrend ? ", " + L.vattenstandTrend.toLowerCase() : ""), (L.vattenstandStn || "Viken") + ", " + ago(L.vattenstandT));
   if (L.vattentemp != null) html += fact(fmtNum(L.vattentemp) + unit("°C"), "Vattentemp", (L.vattentempStn || "") + ", " + ago(L.vattentempT));
   if (L.tryck != null) html += fact(fmtNum(L.tryck, 0) + unit("hPa"), "Lufttryck" + (L.trycktrend ? ", " + L.trycktrend.toLowerCase() : ""), (L.tryckStn || "") + (L.tryckDelta != null ? ", " + (L.tryckDelta > 0 ? "+" : "") + fmtNum(L.tryckDelta) + " på 3 h" : ""));
@@ -743,6 +755,7 @@ $("importBtn").addEventListener("click", function(){
 });
 
 /* ---------- Start ---------- */
+try { var _c = JSON.parse(localStorage.getItem("gh-stn") || "{}"); if (_c.flode){ delete _c.flode; localStorage.setItem("gh-stn", JSON.stringify(_c)); } } catch(e){}
 var SEED = [{"id": "p20260920-0900", "when": "2026-09-20T09:00", "plats": "Gåsahalsen (ytterkurva, vass mot håla)", "sikt": 60, "flode": 6.5, "vattenstand": 55, "strom": "Långsamt utåt, uppdämt", "vattentemp": 15, "tryck": 1010, "trycktrend": "Fallande", "ljusvader": "Mulet, regnstänk, SV 3–5 m/s", "rigg": "Hit Shad 8 cm / Pro Grub 6,5 cm (Motoroil), 7 g jiggskalle, 0,30 FC (1 m) / 0,10 flätlina", "hugg": 2, "art": "Gädda", "resultat": "1 gädda (vasskant), 1 tappad fisk (djuphåla)", "analys": "Högt havsvattenstånd dämde ån och fyllde vasskanten. Fallande tryck och dämpat ljus triggade aktivitet i droppet. Avskuren 0,10-lina mot bottensten kräver direkt spölyft och stenhård press i mothugget.", "matnotering": "Tid 09:00–11:00. Sikt ~60 cm. Flöde 6–7 m³/s. Vattenstånd +50 till +60 cm (stigande, topp +87). Vattentemp ~15 °C. Tryck ~1010 hPa, långsamt fallande.", "createdAt": "2026-09-25T12:00:00Z"}, {"id": "p20260925-1000", "when": "2026-09-25T10:00", "plats": "Gåsahalsen (kast tvärs över ån)", "sikt": 70, "flode": 5.5, "vattenstand": 12.5, "strom": "Mycket svagt / nära stilla", "vattentemp": 14, "tryck": 1017, "trycktrend": "Stabilt", "ljusvader": "Halvklart/sol, svag vind 2–3 m/s", "rigg": "Hit Shad 8 cm / Westin CreCraw 8,5 cm, Westin offset 7 g, 0,30 FC / 0,10 flätlina", "hugg": 0, "art": "", "resultat": "0 (Bompass)", "analys": "Lågt havsvattenstånd dränerade ån (ca 40 cm lägre än 20/9). Vassarna torrlagda, fisken borttvingad från kanterna och parkerad passiv i hålan under lunchsol och stabilt högtryck. 7 g gav snabb duns i stilla vatten.", "matnotering": "Tid 10:00–13:00. Sikt ~70 cm. Flöde 5–6 m³/s. Vattenstånd +10 till +15 cm (sjunkande, lågvatten +12). Vattentemp ~14 °C. Tryck ~1017 hPa, stabilt/högt.", "createdAt": "2026-09-25T12:00:00Z"}];
 sessions = load(K.pass, null);
 if (!sessions){ sessions = SEED; save(K.pass, sessions); }
