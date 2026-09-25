@@ -10,10 +10,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Hämta punkt 554
+      - name: Hämta punkt 554 och spara historik
         run: |
           curl -sf --retry 3 -A "Mozilla/5.0 (fiskelogg)" "https://vattenwebb.smhi.se/hydronu/data/point?subid=554" -o ny.json
-          python3 -c "import json;d=json.load(open('ny.json'));c=d['chartData'];json.dump({'productionTime':d.get('productionTime'),'chartData':{k:c.get(k) for k in ['mq','mlq','mhq','coutHindcast','coutForecast']}},open('flode.json','w'))"
+          python3 - <<'PY'
+          import json, os
+          d = json.load(open('ny.json')); c = d['chartData']
+          hist = {}
+          if os.path.exists('flode.json'):
+              try:
+                  o = json.load(open('flode.json'))
+                  old = o.get('historik') or ((o.get('chartData') or {}).get('coutHindcast') or {}).get('data') or []
+                  for t, v in old:
+                      if v is not None: hist[int(t)] = v
+              except Exception:
+                  pass
+          for t, v in (c.get('coutHindcast') or {}).get('data') or []:
+              if v is not None: hist[int(t)] = v
+          out = {'productionTime': d.get('productionTime'), 'mq': c.get('mq'), 'mlq': c.get('mlq'), 'mhq': c.get('mhq'),
+                 'historik': [[t, hist[t]] for t in sorted(hist)],
+                 'prognos': (c.get('coutForecast') or {}).get('data') or []}
+          json.dump(out, open('flode.json', 'w'))
+          PY
           rm ny.json
       - name: Spara
         run: |
