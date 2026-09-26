@@ -344,10 +344,19 @@ function at(series, t, maxH){
   var best = Math.abs(series[lo].t - t) <= Math.abs(series[hi].t - t) ? series[lo] : series[hi];
   return Math.abs(best.t - t) <= maxH*H ? best.v : null;
 }
+function near(series, t, maxH){
+  if (!series || !series.length) return null;
+  var lo = 0, hi = series.length - 1;
+  while (hi - lo > 1){ var mid = (lo + hi) >> 1; if (series[mid].t < t) lo = mid; else hi = mid; }
+  var best = Math.abs(series[lo].t - t) <= Math.abs(series[hi].t - t) ? series[lo] : series[hi];
+  return Math.abs(best.t - t) <= maxH*H ? best : null;
+}
+// Trenden räknas från senaste faktiska mätpunkt, så att SMHI:s eftersläpning inte ger fel
 function trend(series, t, hours, thr, labels, maxH){
-  var a = at(series, t, maxH || 1.5), b = at(series, t - hours*H, maxH || 1.5);
-  if (a == null || b == null) return null;
-  var d = a - b; return d > thr ? labels[0] : d < -thr ? labels[2] : labels[1];
+  var p = near(series, t, maxH || 1.5); if (!p) return null;
+  var b = at(series, p.t - hours*H, 1);
+  if (b == null) return null;
+  var d = p.v - b; return d > thr ? labels[0] : d < -thr ? labels[2] : labels[1];
 }
 function stationList(base, param){ return getJSON(base + "/parameter/" + param + ".json", true).then(function(p){ return { unit: p.unit || "", list: p.station || [] }; }); }
 function nearestActive(list, lat, lng, maxKm){
@@ -473,19 +482,22 @@ function fetchConditions(start, end){
     vind: srcMet(4, start), vindr: srcMet(3, start), flode: srcFlow(), om: srcOpenMeteo(start - 3*DAY, end)
   }).then(function(r){
     var o = r.ok, sea = o.hav && o.hav.s, flow = o.flode && o.flode.s, om = o.om || {};
-    var pres = (o.tryck && o.tryck.s.length) ? o.tryck.s : om.pressure_msl, cloud = om.cloud_cover;
-    var tl = [], t0 = Math.floor(start/H)*H;
-    for (var t = t0; t <= Math.max(end, t0); t += H){
-      var tt = Math.min(Math.max(t, start), end);
-      tl.push({ t: tt, niva: round(at(sea, tt, 1.5), 0), nivaTrend: trend(sea, tt, 3, 3, ["Stigande", "Stabilt", "Sjunkande"]),
-        tryck: round(at(pres, tt, 1.5), 1), tryckTrend: trend(pres, tt, 3, 1, ["Stigande", "Stabilt", "Fallande"]),
+    var smhiP = o.tryck && o.tryck.s, omP = om.pressure_msl, cloud = om.cloud_cover;
+    var tl = [], t0 = Math.floor(start/H)*H, times = [];
+    for (var t = t0; t < end; t += H) times.push(Math.max(t, start));
+    times.push(end);
+    times.forEach(function(tt){
+      var tol = tt > Date.now() - 4*H ? 4 : 1.5;
+      var pres = near(smhiP, tt, tol) ? smhiP : omP;
+      tl.push({ t: tt, niva: round(at(sea, tt, tol), 0), nivaTrend: trend(sea, tt, 3, 3, ["Stigande", "Stabilt", "Sjunkande"], tol),
+        tryck: round(at(pres, tt, tol), 1), tryckTrend: trend(pres, tt, 3, 1, ["Stigande", "Stabilt", "Fallande"], tol),
         moln: round(at(cloud, tt, 1.5), 0), flode: round(at(flow, tt, 30), 1), flodeTrend: flowTrend(flow, tt), ljus: ljusAt(tt) });
-    }
-    var ws = o.vind ? meanIn(o.vind.s, start - H, end) : meanIn(om.wind_speed_10m, start - H, end);
-    var wd = o.vindr ? dirMean(o.vindr.s, start - H, end) : dirMean(om.wind_direction_10m, start - H, end);
+    });
+    var ws = o.vind ? meanIn(o.vind.s, start - 3*H, end) : null; if (ws == null) ws = meanIn(om.wind_speed_10m, start - H, end);
+    var wd = o.vindr ? dirMean(o.vindr.s, start - 3*H, end) : null; if (wd == null) wd = dirMean(om.wind_direction_10m, start - H, end);
     var f72 = null, fa = at(flow, start, 30), fb = at(flow, start - 72*H, 30);
     if (fa != null && fb != null) f72 = Math.round((fa - fb)/Math.max(fb, 0.5)*100);
-    var seaWin = sea ? sea.filter(function(x){ return x.t >= start && x.t <= end; }) : [];
+    var seaWin = sea ? sea.filter(function(x){ return x.t >= start - (end > Date.now() - 4*H ? 3*H : 0) && x.t <= end; }) : [];
     return {
       hamtat: Date.now(), start: start, end: end, timeline: tl,
       sum: {
@@ -629,9 +641,8 @@ function renderBand(){
   if (t.rise) html += '<span class="tick" style="left:' + pct(t.rise) + '%">' + hm(t.rise) + '</span>';
   if (t.set) html += '<span class="tick" style="left:' + pct(t.set) + '%">' + hm(t.set) + '</span>';
   band.innerHTML = html + '<span class="now" style="left:' + pct(now) + '%"></span>';
-  var m = moon(now);
   $("lightnow").textContent = ljusAt(now) || "–";
-  $("sunfacts").innerHTML = fact(hm(t.dawn), "Gryning börjar") + fact(hm(t.rise), "Soluppgång") + fact(hm(t.set), "Solnedgång") + fact(hm(t.dusk), "Skymningen slut") + fact(m.illum + " %", m.name);
+  $("sunfacts").innerHTML = fact(hm(t.dawn), "Gryning börjar") + fact(hm(t.rise), "Soluppgång") + fact(hm(t.set), "Solnedgång") + fact(hm(t.dusk), "Skymningen slut");
   $("clock").firstChild.nodeValue = hm(now);
   $("date").textContent = now.toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "long" });
 }
