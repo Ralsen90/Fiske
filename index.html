@@ -166,6 +166,28 @@ small.u{font-size:16px;font-weight:600}
 .autobox{grid-column:1/-1;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .autobox .row{margin-top:6px}
 .stats div span{white-space:nowrap}
+
+.win{display:block;padding:0}
+.win summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:1fr 90px 36px;gap:10px;align-items:center;padding:10px 0}
+.win summary::-webkit-details-marker{display:none}
+.wbody{padding:0 0 12px}
+.verdict{font-weight:600;color:var(--fly);margin-top:4px}
+.sum{margin:10px 0 4px;font-weight:500}
+.why .fi{display:grid;grid-template-columns:22px 1fr;gap:6px;padding:5px 0;color:var(--ink)}
+.why .fi b{font-weight:600}
+.sg{font-size:14px;line-height:1.6}
+.sg.u{color:var(--reed)}.sg.d{color:var(--fly)}.sg.n{color:var(--muted)}
+.chartwrap{margin:14px 0 4px}
+.seachart{width:100%;height:auto;display:block}
+.seachart .hiband{fill:var(--reed);opacity:.12}
+.seachart .gl{stroke:var(--line);stroke-width:1;stroke-dasharray:3 4}
+.seachart .dl{stroke:var(--line);stroke-width:1}
+.seachart .yl{fill:var(--muted);font-size:12px;text-anchor:end;font-family:var(--body)}
+.seachart .xl{fill:var(--muted);font-size:13px;text-anchor:middle;font-family:var(--body)}
+.seachart .sealine{fill:none;stroke:var(--water);stroke-width:2.5;stroke-linejoin:round}
+.seachart .bestband{fill:var(--fly);opacity:.35}
+.seachart .topband{fill:var(--water);opacity:.2}
+.seachart .nowl{stroke:var(--fly);stroke-width:2}
 </style>
 </head>
 <body>
@@ -606,23 +628,60 @@ function learned(S, f, bucket){
   var r = (st.n + KH*S.Rp*m)/(st.h + KH);
   return { x: r/(r + S.Rp), st: st };
 }
+function valText(k, c){
+  if (k === "niva") return c.niva != null ? sign(c.niva, 0) + " cm" : "";
+  if (k === "nivaTrend") return "";
+  if (k === "flodeTrend") return c.flode != null ? fmt(c.flode) + " m³/s" : "";
+  if (k === "tryckTrend") return c.tryck != null ? fmt(c.tryck, 0) + " hPa" : "";
+  if (k === "moln") return c.moln != null ? fmt(c.moln, 0) + " %" : "";
+  return "";
+}
 function scoreCond(S, c, phases){
-  var parts = [], why = [], known = 0;
+  var parts = [], items = [], known = 0;
   FACTORS.forEach(function(f){
+    var bucket, l, x, h = 0, n = 0;
     if (f.k === "ljus"){
       var ls = phases.map(function(ph){ return learned(S, f, ph); });
-      var x = ls.reduce(function(a, l){ return a + l.x; }, 0)/ls.length, hh = ls.reduce(function(a, l){ return a + l.st.h; }, 0), nn = ls.reduce(function(a, l){ return a + l.st.n; }, 0);
-      parts.push([f.w, x]); known++;
-      why.push("<b>" + phases.join("/") + "</b>: " + (hh ? nn + " hugg på " + fmt(hh) + " h fiskat" : "inga timmar loggade än"));
-      return;
+      x = ls.reduce(function(a, q){ return a + q.x; }, 0)/ls.length;
+      h = ls.reduce(function(a, q){ return a + q.st.h; }, 0); n = ls.reduce(function(a, q){ return a + q.st.n; }, 0);
+      bucket = phases.join(" och ").toLowerCase(); known++;
+    } else {
+      bucket = f.of(c);
+      if (!bucket || f.b[bucket] == null){ parts.push([f.w, .5]); items.push({ namn: f.namn, label: "okänt", x: .5, okand: true, w: f.w }); return; }
+      l = learned(S, f, bucket); x = l.x; h = l.st.h; n = l.st.n; known++;
     }
-    var b = f.of(c);
-    if (!b || f.b[b] == null){ parts.push([f.w, .5]); return; }
-    var l = learned(S, f, b); parts.push([f.w, l.x]); known++;
-    why.push("<b>" + f.namn + ": " + b.toLowerCase() + "</b>" + (l.st.h ? ", " + l.st.n + " hugg på " + fmt(l.st.h) + " h" : ""));
+    parts.push([f.w, x]);
+    items.push({ namn: f.namn, label: bucket.toLowerCase(), val: valText(f.k, c), x: x, h: h, n: n, w: f.w, prior: f.k === "ljus" ? null : f.b[bucket] });
   });
   var sw = parts.reduce(function(a, x){ return a + x[0]; }, 0);
-  return { score: Math.round(parts.reduce(function(a, x){ return a + x[0]*x[1]; }, 0)/sw*100), why: why, known: known };
+  return { score: Math.round(parts.reduce(function(a, x){ return a + x[0]*x[1]; }, 0)/sw*100), items: items, known: known };
+}
+function itemHtml(it, S){
+  if (it.okand) return '<li class="fi"><span class="sg n">•</span><span><b>' + esc(it.namn) + '</b>: ingen prognos, räknas neutralt</span></li>';
+  var d = it.x - .5, cls = d >= .06 ? "u" : d <= -.06 ? "d" : "n", mark = cls === "u" ? "▲" : cls === "d" ? "▼" : "•";
+  var basis;
+  if (it.h >= 1){
+    var rate = it.n/it.h, idx = S.R ? Math.round(rate/S.R*100) : null;
+    basis = "din logg: " + it.n + " hugg på " + fmt(it.h) + " h" + (idx != null ? ", " + (idx >= 110 ? "bättre än" : idx <= 90 ? "sämre än" : "ungefär som") + " ditt snitt" : "");
+  } else {
+    basis = "inte fiskat i det läget än, " + (cls === "u" ? "antas vara bra" : cls === "d" ? "antas vara sämre" : "antas spela liten roll");
+  }
+  return '<li class="fi"><span class="sg ' + cls + '">' + mark + '</span><span><b>' + esc(it.namn) + ': ' + esc(it.label) + (it.val ? ' (' + esc(it.val) + ')' : '') + '</b><br><span class="muted small">' + esc(basis) + '</span></span></li>';
+}
+function summaryLine(sc){
+  var up = sc.items.filter(function(i){ return !i.okand && i.x - .5 >= .06; }).sort(function(a, b){ return (b.x - .5)*b.w - (a.x - .5)*a.w; });
+  var dn = sc.items.filter(function(i){ return !i.okand && i.x - .5 <= -.06; }).sort(function(a, b){ return (a.x - .5)*a.w - (b.x - .5)*b.w; });
+  function nm(i){ return i.namn === "Ljus" ? i.label : i.namn === "Havet" ? i.label + " hav" : i.namn === "Havsnivå" ? i.label.split(",")[0] + " vatten" : i.namn === "Flöde" ? i.label + " flöde" : i.namn === "Lufttryck" ? i.label + " tryck" : i.label; }
+  var t = [];
+  if (up.length) t.push("Drar upp: " + up.slice(0, 3).map(nm).join(", "));
+  if (dn.length) t.push("Drar ner: " + dn.slice(0, 3).map(nm).join(", "));
+  return t.join(". ") + (t.length ? "." : "Inget sticker ut åt något håll.");
+}
+function verdict(score){ return score >= 70 ? "Klart bättre än ett vanligt pass" : score >= 58 ? "Lite bättre än vanligt" : score > 42 ? "Som ett vanligt pass" : score > 30 ? "Lite sämre än vanligt" : "Klart sämre än vanligt"; }
+function confidence(S){
+  if (S.tot.h < 15) return { t: "Låg säkerhet", d: "Du har " + fmt(S.tot.h) + " timmar i loggen, så det mesta bygger på antaganden." };
+  if (S.tot.h < 50) return { t: "Medelhög säkerhet", d: "Loggen börjar påverka, men enskilda pass väger fortfarande tungt." };
+  return { t: "God säkerhet", d: "Bygger till stor del på dina egna pass." };
 }
 
 /* ---------- Läget ---------- */
@@ -685,13 +744,13 @@ function fcRow(t, maxH){
 function futureCond(t){
   var c = {}, r = fcRow(t), p = fcRow(t - 3*H);
   if (r){
-    c.niva = r.niva; c.moln = r.moln;
+    c.niva = r.niva; c.moln = r.moln; c.tryck = r.tryck;
     if (r.niva != null && p && p.niva != null){ var d = r.niva - p.niva; c.nivaTrend = d > 3 ? "Stigande" : d < -3 ? "Sjunkande" : "Stabilt"; }
     if (r.tryck != null && p && p.tryck != null){ var e = r.tryck - p.tryck; c.tryckTrend = e <= -1 ? "Fallande" : e >= 1 ? "Stigande" : "Stabilt"; }
   }
-  if (forecast && forecast.flode) c.flodeTrend = flowTrend(forecast.flode.map(function(x){ return x; }), t);
+  if (forecast && forecast.flode){ c.flodeTrend = flowTrend(forecast.flode, t); c.flode = at(forecast.flode, t, 30); }
   var now = lageNow();
-  if (now && Math.abs(t - now.t) < 6*H){ ["niva", "nivaTrend", "tryckTrend", "moln", "flodeTrend"].forEach(function(k){ if (c[k] == null && now[k] != null) c[k] = now[k]; }); }
+  if (now && Math.abs(t - now.t) < 6*H){ ["niva", "nivaTrend", "tryck", "tryckTrend", "moln", "flode", "flodeTrend"].forEach(function(k){ if (c[k] == null && now[k] != null) c[k] = now[k]; }); }
   return c;
 }
 function buildWindows(S){
@@ -706,7 +765,7 @@ function buildWindows(S){
   }
   return out.filter(function(w){ return w.end > now + 20*60e3; }).map(function(w){
     var sc = scoreCond(S, futureCond(Math.max(w.center, now)), w.phases);
-    sc.w = w; sc.conf = sc.known >= 5 ? "Bra underlag" : sc.known >= 3 ? "Delvis underlag" : "Mest ljus, osäker"; return sc;
+    sc.w = w; sc.c = futureCond(Math.max(w.center, now)); return sc;
   });
 }
 function winLabel(w){
@@ -715,18 +774,49 @@ function winLabel(w){
   var day = dd === 0 ? "Idag" : dd === 1 ? "Imorgon" : s.toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "numeric" });
   return day.charAt(0).toUpperCase() + day.slice(1) + ", " + w.kind + " " + hm(s) + "–" + hm(w.end);
 }
+function chipsFor(c){
+  var a = [];
+  if (c.niva != null) a.push("Hav " + sign(c.niva, 0) + (c.nivaTrend === "Stigande" ? " ↑" : c.nivaTrend === "Sjunkande" ? " ↓" : ""));
+  if (c.tryckTrend) a.push("Tryck " + (c.tryckTrend === "Fallande" ? "↓" : c.tryckTrend === "Stigande" ? "↑" : "→"));
+  var mb = molnB(c.moln); if (mb) a.push(mb);
+  if (c.flodeTrend && c.flodeTrend !== "Stabilt") a.push("Flöde " + (c.flodeTrend === "Stigande" ? "↑" : "↓"));
+  return a.join(" · ");
+}
+function seaChart(wins, best){
+  if (!forecast || !forecast.rader) return "";
+  var now = Date.now(), end = now + 7*DAY;
+  var pts = forecast.rader.filter(function(r){ return r.niva != null && r.t >= now - 3*H && r.t <= end; });
+  if (pts.length < 10) return "";
+  var W = 700, Hh = 150, pl = 34, pr = 8, pt = 10, pb = 24;
+  var vals = pts.map(function(p){ return p.niva; }), lo = Math.min(-10, Math.min.apply(null, vals) - 5), hi = Math.max(70, Math.max.apply(null, vals) + 5);
+  function X(t){ return pl + (t - pts[0].t)/(end - pts[0].t)*(W - pl - pr); }
+  function Y(v){ return pt + (hi - v)/(hi - lo)*(Hh - pt - pb); }
+  var svg = '<svg viewBox="0 0 ' + W + ' ' + Hh + '" class="seachart" role="img" aria-label="Havsnivå i Viken kommande 7 dagar">';
+  svg += '<rect x="' + pl + '" y="' + Y(hi) + '" width="' + (W - pl - pr) + '" height="' + (Y(45) - Y(hi)) + '" class="hiband"/>';
+  [0, 25, 45].forEach(function(v){ svg += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" class="gl"/><text x="' + (pl - 4) + '" y="' + (Y(v) + 4) + '" class="yl">' + v + '</text>'; });
+  var top = wins.slice().sort(function(a, b){ return b.score - a.score; }).slice(0, 3);
+  top.forEach(function(wn){ svg += '<rect x="' + X(wn.w.start) + '" y="' + pt + '" width="' + Math.max(3, X(wn.w.end) - X(wn.w.start)) + '" height="' + (Hh - pt - pb) + '" class="' + (wn === best ? "bestband" : "topband") + '"/>'; });
+  for (var d = 0; d < 8; d++){ var md = new Date(now + d*DAY); md.setHours(0,0,0,0); if (md.getTime() > pts[0].t && md.getTime() < end){ svg += '<line x1="' + X(md) + '" x2="' + X(md) + '" y1="' + pt + '" y2="' + (Hh - pb) + '" class="dl"/>'; }
+    var noon = new Date(now + d*DAY); noon.setHours(12,0,0,0); if (noon.getTime() < end && noon.getTime() > pts[0].t) svg += '<text x="' + X(noon) + '" y="' + (Hh - 6) + '" class="xl">' + noon.toLocaleDateString("sv-SE", { weekday: "short" }) + '</text>'; }
+  svg += '<polyline class="sealine" points="' + pts.map(function(p){ return X(p.t).toFixed(1) + "," + Y(p.niva).toFixed(1); }).join(" ") + '"/>';
+  svg += '<line x1="' + X(now) + '" x2="' + X(now) + '" y1="' + pt + '" y2="' + (Hh - pb) + '" class="nowl"/></svg>';
+  return '<div class="chartwrap">' + svg + '<p class="note small">Havsnivå i Viken, prognos i cm. Skuggat fält är högt vatten (över 45). Orange är bästa luckan, blått de två näst bästa.</p></div>';
+}
 function renderScan(){
   var el = $("scan"), S = stats(), wins = buildWindows(S); if (!wins.length){ el.innerHTML = ""; return; }
   var best = wins.slice().sort(function(a, b){ return b.score - a.score || b.known - a.known || a.w.start - b.w.start; })[0];
-  var html = '<div class="best"><div class="bhead"><div><div class="bw">' + esc(winLabel(best.w)) + '</div><div class="muted small">' + esc(best.conf) + '</div></div>' +
-    '<div class="bs">' + best.score + '<small> /100</small></div></div><ul class="why">' + best.why.map(function(w){ return "<li>" + w + "</li>"; }).join("") + '</ul></div>';
+  var conf = confidence(S);
+  var head = best.score < 55 ? '<p class="muted">Ingen lucka sticker ut den här veckan. Den här är minst dålig.</p>' : "";
+  var html = head + '<div class="best"><div class="bhead"><div><div class="bw">' + esc(winLabel(best.w)) + '</div><div class="verdict">' + esc(verdict(best.score)) + '</div></div>' +
+    '<div class="bs">' + best.score + '</div></div><p class="sum">' + esc(summaryLine(best)) + '</p><ul class="why">' + best.items.map(function(it){ return itemHtml(it, S); }).join("") + '</ul></div>';
+  html += seaChart(wins, best);
   html += '<div class="wins">' + wins.slice(0, 12).filter(function(x){ return x !== best; }).map(function(x){
-    return '<div class="win"><div class="wl"><b>' + esc(winLabel(x.w)) + '</b><span>' + esc(x.conf) + '</span></div><div class="bar"><i style="width:' + x.score + '%"></i></div><div class="sc">' + x.score + '</div></div>';
+    return '<details class="win"><summary><div class="wl"><b>' + esc(winLabel(x.w)) + '</b><span>' + esc(chipsFor(x.c) || verdict(x.score)) + '</span></div><div class="bar"><i style="width:' + x.score + '%"></i></div><div class="sc">' + x.score + '</div></summary>' +
+      '<div class="wbody"><p class="sum">' + esc(verdict(x.score) + ". " + summaryLine(x)) + '</p><ul class="why">' + x.items.map(function(it){ return itemHtml(it, S); }).join("") + '</ul></div></details>';
   }).join("") + '</div>';
-  var note = "50 är ett vanligt läge för dig, högre är bättre. Bygger på " + fmt(S.tot.h) + " fiskade timmar och " + S.tot.n + " hugg. " +
-    (S.tot.h < 40 ? "Än så länge styr mest grundantagandena: högt och stigande hav, lågt ljus och fallande tryck. " : "Din logg väger nu tyngre än grundantagandena. ");
-  if (forecast && forecast.harHav) note += forecast.havOkalibrerad ? "Havsprognosen är inte justerad mot Viken den här gången." : "Havsprognosen är en grov modell justerad mot Viken.";
-  el.innerHTML = html + '<p class="note">' + esc(note) + '</p>';
+  var note = "Siffran jämför med ett vanligt pass för dig, där 50 är vanligt. " + conf.t + ": " + conf.d;
+  if (forecast && forecast.harHav && forecast.havOkalibrerad) note += " Havsprognosen är inte justerad mot Viken den här gången.";
+  el.innerHTML = html + '<p class="note">' + esc(note) + ' Tryck på en lucka för att se varför.</p>';
 }
 
 /* ---------- Pågående pass ---------- */
