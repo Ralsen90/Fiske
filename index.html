@@ -205,6 +205,22 @@ h3{font-family:var(--display);font-weight:600;font-size:20px;margin:22px 0 4px}
 .hrow2 select{min-width:0}
 .ci{color:var(--muted);font-size:14px}
 .tempname{border-color:var(--fly);border-width:2px}
+.lesson{background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--reed);border-radius:8px;padding:10px 12px;margin:0 0 12px;position:relative}
+.lesson b{font-family:var(--display);font-weight:600;font-size:18px}
+.lesson ul{margin:6px 0 0;padding-left:18px}
+.lesson li{margin-bottom:3px;font-size:15px}
+.lesson.big{margin:4px 0 18px;padding-right:44px}
+.lesson.big b{font-size:22px}
+.lesson .x{position:absolute;top:2px;right:2px}
+.map{isolation:isolate;position:relative;z-index:0;height:340px;border-radius:10px;border:1px solid var(--line);overflow:hidden;background:var(--paper);margin-top:6px}
+table.cov td.cv{text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums;border:2px solid var(--bg);padding:8px 6px}
+table.cov th{text-align:center}
+.cv0{color:var(--muted);font-style:italic;background:transparent}
+.cv1{background:color-mix(in srgb,var(--water) 15%,transparent)}
+.cv2{background:color-mix(in srgb,var(--water) 35%,transparent)}
+.cv3{background:color-mix(in srgb,var(--water) 60%,transparent)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .leaflet-tile{filter:brightness(.75) contrast(1.05)}}
+:root[data-theme="dark"] .leaflet-tile{filter:brightness(.75) contrast(1.05)}
 .tbl td:first-child{white-space:normal;min-width:130px;max-width:190px}
 </style>
 </head>
@@ -296,6 +312,7 @@ h3{font-family:var(--display);font-weight:600;font-size:20px;margin:22px 0 4px}
   </section>
 
   <section id="bok" hidden>
+    <div id="lessonBox"></div>
     <div class="stats" id="stats"></div>
     <div id="list"></div>
     <h2>Molnkopia</h2>
@@ -748,11 +765,12 @@ function condFor(p, t){
   return c;
 }
 function passHours(p){ return Math.max(0.25, (p.end - p.start)/H); }
-function stats(){
-  var S = { tot: { h: 0, n: 0, pass: sessions.length, landade: 0, foljare: 0, andra: 0 } };
+function stats(list){
+  list = list || sessions;
+  var S = { tot: { h: 0, n: 0, pass: list.length, landade: 0, foljare: 0, andra: 0 } };
   FACTORS.concat(PASSFACT).forEach(function(f){ S[f.k] = {}; });
   function add(k, b, h, n, pid){ if (!b) return; var o = S[k][b] || (S[k][b] = { h: 0, n: 0, p: {}, bp: {} }); o.h += h; o.n += n; if (pid){ if (h) o.p[pid] = 1; if (n) o.bp[pid] = 1; } }
-  sessions.forEach(function(p){
+  list.forEach(function(p){
     // Kvartssteg, så att byten av plats och bete under passet hamnar rätt
     var hours = passHours(p), steps = Math.max(1, Math.ceil(hours*4)), w = hours/steps;
     for (var i = 0; i < steps; i++){
@@ -1271,6 +1289,7 @@ $("passForm").addEventListener("submit", function(ev){
     (s.logg || []).forEach(function(e){ if (e.typ === "plats" && strukt[e.plats] && e.struktur !== strukt[e.plats]){ e.struktur = strukt[e.plats]; ch = true; } });
     if (ch && s !== p) s.updatedAt = Date.now();
   });
+  lastSaved = p.id;
   persist(); form = null; editing = null; renderPass(); showTab("bok"); toast("Pass sparat");
   if (changedWindow || !p.auto) backfill([p.id]);
 });
@@ -1293,7 +1312,15 @@ function condSummary(p, detailed){
   }
   return '<div class="chips">' + chips.map(function(x){ return '<span>' + esc(x) + '</span>'; }).join("") + '</div>';
 }
+var lastSaved = null;
+function renderLessonBox(){
+  var el = $("lessonBox"), p = lastSaved && sessions.find(function(x){ return x.id === lastSaved; });
+  if (!p){ el.innerHTML = ""; return; }
+  el.innerHTML = lessonHtml(p, "Det här lärde passet " + dateLong(p.start) + " oss").replace('<div class="lesson">', '<div class="lesson big"><button type="button" class="x" id="lessonClose" aria-label="Stäng">×</button>');
+  $("lessonClose").addEventListener("click", function(){ lastSaved = null; renderLessonBox(); });
+}
 function renderBook(){
+  renderLessonBox();
   var list = $("list"), S = stats();
   $("stats").innerHTML = '<div><b>' + S.tot.pass + '</b><span>pass</span></div><div><b>' + fmt(S.tot.h) + '</b><span>timmar</span></div><div><b class="hit">' + S.tot.n + '</b><span>' + (MAL === "Alla" ? "hugg" : esc(MAL.toLowerCase())) + '</span></div><div><b>' + fmt(S.R, 2) + '</b><span>per timme</span></div>';
   if (!sessions.length){ list.innerHTML = '<div class="empty"><p><b>Loggboken är tom.</b></p><p class="muted">Starta ett pass under Pass.</p></div>'; return; }
@@ -1313,7 +1340,7 @@ function renderBook(){
     var rig = riggText(p);
     return '<details class="entry"><summary><span class="e-when">' + esc(dateLong(p.start)) + " " + hm(p.start) + "–" + hm(p.end) + '</span>' +
       '<span class="e-res' + (n ? ' hit' : '') + '">' + n + '<small>' + (MAL === "Alla" ? "hugg" : esc(MAL.toLowerCase())) + '</small></span><span class="e-meta">' + esc([p.plats, fmt(hrs) + " h", n ? fmt(n/hrs, 2) + " hugg/h" : ""].filter(Boolean).join(", ")) + '</span></summary>' +
-      '<div class="e-body">' + condSummary(p, true) + (p._hamtar ? '<p class="muted small">Hämtar mätdata…</p>' : "") +
+      '<div class="e-body">' + lessonHtml(p) + condSummary(p, true) + (p._hamtar ? '<p class="muted small">Hämtar mätdata…</p>' : "") +
       '<dl>' + [["Platsen", plInfo], ["Mätt", matt], ["Siktdjup", p.sikt != null && p.sikt !== "" ? fmt(p.sikt, 0) + " cm" : ""], ["Strömdrag", p.strom], ["Rigg", rig], ["Rigg (gammal)", p.riggText], ["Analys", p.analys], ["Mätnotering", p.matnotering]]
         .filter(function(r){ return r[1]; }).map(function(r){ return '<dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join("") + '</dl>' +
       (hugg ? '<ul class="hlist">' + hugg + '</ul>' : "") +
@@ -1340,16 +1367,131 @@ function backfill(ids, loud){
   })();
 }
 
+/* ---------- Lära sig ån ---------- */
+var HUGGORD = { Alla: "hugg", Abborre: "abborrhugg", "Gädda": "gäddhugg", "Öring": "öringhugg", "Havsöring": "havsöringhugg", "Gös": "göshugg", Id: "idhugg", "Mört": "mörthugg", Lax: "laxhugg", "Horngädda": "horngäddhugg", Annan: "hugg av annan art" };
+function huggOrd(){ return HUGGORD[MAL] || "hugg"; }
+// Faktorer som säger något om ån. Väder som molnighet och tryck lämnas utanför, de ger mest brus här.
+var LEARNK = ["ljus", "salt", "niva", "nivaTrend", "vtemp", "klarhet", "plats", "struktur", "mynning", "bete", "modell"];
+function lessons(p){
+  var prior = sessions.filter(function(x){ return x.id !== p.id && x.start < p.start; });
+  var A = stats(prior), B = stats([p]), w = huggOrd(), out = [];
+  var facts = FACTORS.concat(PASSFACT).filter(function(f){ return LEARNK.indexOf(f.k) >= 0; });
+  function where(f, b){ return f.namn.toLowerCase() + " är " + (f.k === "plats" ? b : b.toLowerCase()); }
+  if (B.tot.n && !A.tot.n) out.push({ p: 0, t: "Första " + w + "et i loggen." });
+  facts.forEach(function(f){
+    Object.keys(B[f.k]).forEach(function(b){
+      var nb = B[f.k][b], na = A[f.k][b] || { h: 0, n: 0 };
+      if (nb.n && A.tot.n && !na.n) out.push({ p: 1, t: "Första " + w + "et där " + where(f, b) + "." });
+      else if (nb.n && na.n && (f.k === "plats" || f.k === "ljus" || f.k === "mynning")) out.push({ p: 2, t: "Fler " + w + " där " + where(f, b) + ": nu " + (na.n + nb.n) + " på " + fmt(na.h + nb.h) + " timmar." });
+      if (nb.h >= .25 && na.h < .5) out.push({ p: 3, t: "Första gången du fiskar där " + where(f, b) + "." });
+    });
+  });
+  if (!B.tot.n) ["plats", "mynning", "ljus"].forEach(function(k){
+    var f = PASSFACT.concat(FACTORS).filter(function(x){ return x.k === k; })[0];
+    Object.keys(B[k]).forEach(function(b){
+      var nb = B[k][b], na = A[k][b] || { h: 0, n: 0 };
+      if (nb.h >= .5 && na.h >= .5 && !na.n) out.push({ p: 4, h: na.h + nb.h, t: "Där " + where(f, b) + ": nu " + fmt(na.h + nb.h) + " timmar utan " + w + "." });
+    });
+  });
+  out.sort(function(a, b){ return a.p - b.p || (b.h || 0) - (a.h || 0); });
+  var seen = {};
+  out = out.filter(function(x){ if (seen[x.t]) return false; seen[x.t] = 1; return true; }).slice(0, 5);
+  if (!out.length) out.push({ t: "Inget nytt läge den här gången. Passet stärker det appen redan vet om de här förhållandena." });
+  return out.map(function(x){ return x.t; });
+}
+function lessonHtml(p, title){
+  return '<div class="lesson"><b>' + esc(title || "Det här lärde passet oss") + '</b><ul>' + lessons(p).map(function(t){ return '<li>' + esc(t) + '</li>'; }).join("") + '</ul></div>';
+}
+// Täckning: var har du fiskat och var vet du ingenting än
+function ljusGrp(l){ return l === "Gryning" || l === "Morgonljus" ? "Morgon" : l === "Dagsljus" ? "Dag" : l === "Kvällsljus" || l === "Skymning" ? "Kväll" : l === "Mörker" ? "Mörker" : null; }
+function coverageHtml(title, rows, rowOf){
+  var cols = ["Morgon", "Dag", "Kväll", "Mörker"], cells = {};
+  function cell(r, k){ var key = r + "|" + k; return cells[key] || (cells[key] = { h: 0, n: 0 }); }
+  sessions.forEach(function(p){
+    var hours = passHours(p), steps = Math.max(1, Math.ceil(hours*4)), w = hours/steps;
+    for (var i = 0; i < steps; i++){
+      var t = p.start + (i + 0.5)*(p.end - p.start)/steps, c = condFor(p, t), r = rowOf(c, stateAt(p, t)), k = ljusGrp(c.ljus);
+      if (r && k) cell(r, k).h += w;
+    }
+    (p.hugg || []).forEach(function(h){
+      if (!isMal(h)) return;
+      var t = h.t || (p.start + p.end)/2, c = condFor(p, t), r = rowOf(c, stateAt(p, t)), k = ljusGrp(c.ljus);
+      if (r && k) cell(r, k).n++;
+    });
+  });
+  var html = '<h3>' + esc(title) + '</h3><div class="tbl"><table class="cov"><thead><tr><th></th>' + cols.map(function(c){ return '<th>' + c + '</th>'; }).join("") + '</tr></thead><tbody>';
+  rows.forEach(function(r){
+    html += '<tr><td>' + esc(r) + '</td>' + cols.map(function(k){
+      var c = cells[r + "|" + k] || { h: 0, n: 0 }, lvl = c.h < .25 ? 0 : c.h < 3 ? 1 : c.h < 10 ? 2 : 3;
+      return '<td class="cv cv' + lvl + '">' + (lvl ? fmt(c.h, 0 + (c.h < 1 ? 1 : 0)) + ' h' + (c.n ? '<br><b class="hit">' + c.n + ' hugg</b>' : '') : 'aldrig') + '</td>';
+    }).join("") + '</tr>';
+  });
+  return html + '</tbody></table></div>';
+}
+// Karta över ån med platser och hugg
+var mapObj = null;
+function loadLeaflet(){
+  if (window.L) return Promise.resolve();
+  if (loadLeaflet._p) return loadLeaflet._p;
+  return (loadLeaflet._p = new Promise(function(res, rej){
+    var c = document.createElement("link"); c.rel = "stylesheet"; c.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"; document.head.appendChild(c);
+    var sc = document.createElement("script"); sc.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
+    sc.onload = res; sc.onerror = function(){ loadLeaflet._p = null; rej(); }; document.head.appendChild(sc);
+  }));
+}
+function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function renderMap(S){
+  var el = $("map"); if (!el) return;
+  loadLeaflet().then(function(){
+    if (!document.body.contains(el)) return;
+    if (mapObj){ mapObj.remove(); mapObj = null; }
+    mapObj = L.map(el, { scrollWheelZoom: false });
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(mapObj);
+    var fly = cssVar("--fly"), water = cssVar("--water"), ink = cssVar("--ink"), pts = [];
+    L.polyline(RIVER, { color: water, weight: 4, opacity: .5 }).addTo(mapObj);
+    L.circleMarker(RIVER[0], { radius: 5, color: water, fillColor: water, fillOpacity: 1 }).addTo(mapObj).bindPopup("Mynningen");
+    var spots = {};
+    knownSpots().forEach(function(k){ if (!spots[k.namn]) spots[k.namn] = k; });
+    Object.keys(spots).forEach(function(namn){
+      var k = spots[namn], st = (S.plats && S.plats[namn]) || { h: 0, n: 0 }, km = riverKm(k.pos);
+      var m = L.circleMarker([k.pos.lat, k.pos.lng], { radius: 7 + Math.sqrt(st.h)*3, color: ink, weight: 2, fillColor: st.n ? fly : cssVar("--paper"), fillOpacity: .9 }).addTo(mapObj);
+      m.bindPopup('<b>' + esc(namn) + '</b><br>' + [k.struktur, km != null ? fmt(km) + " km från mynningen" : ""].filter(Boolean).map(esc).join(", ") + '<br>' + fmt(st.h) + ' timmar, ' + st.n + ' ' + esc(huggOrd()));
+      pts.push([k.pos.lat, k.pos.lng]);
+    });
+    sessions.forEach(function(p){
+      (p.hugg || []).forEach(function(h){
+        if (!h.pos || !isHugg(h)) return;
+        var mal = isMal(h);
+        L.circleMarker([h.pos.lat, h.pos.lng], { radius: 5, color: mal ? fly : water, weight: 2, fillColor: mal ? fly : water, fillOpacity: mal ? 1 : .5 }).addTo(mapObj)
+          .bindPopup(esc([hm(h.t), dateLong(h.t), h.art, h.utfall, h.langd != null ? fmt(h.langd, 0) + " cm" : ""].filter(Boolean).join(", ")));
+        pts.push([h.pos.lat, h.pos.lng]);
+      });
+    });
+    // Vänta tills kartan har sin riktiga storlek, annars hamnar platser utanför bilden
+    var bounds = pts.length ? L.latLngBounds(pts.concat([RIVER[0]])).pad(.15) : L.latLngBounds(RIVER).pad(.05);
+    mapObj.fitBounds(bounds, { maxZoom: 16 });
+    setTimeout(function(){ if (mapObj){ mapObj.invalidateSize(); mapObj.fitBounds(bounds, { maxZoom: 16 }); } }, 150);
+  }).catch(function(){ el.innerHTML = '<p class="muted small" style="padding:12px">Kartan kunde inte laddas. Den kräver nätverk.</p>'; });
+}
+
 /* ---------- Analys ---------- */
 function renderAnalys(){
   var S = stats(), el = $("analysBody");
   var html = '<div class="f" style="max-width:240px;margin-bottom:12px"><label for="malart">Målart</label><select id="malart">' + opts(["Alla"].concat(ARTER_ALLA), MAL) + '</select></div>';
   if (!sessions.length){ el.innerHTML = html + '<p class="muted">Logga några pass först.</p>'; bindMal(); return; }
-  var malTxt = MAL === "Alla" ? "hugg" : MAL.toLowerCase() + "hugg";
+  var malTxt = huggOrd();
   html += '<p class="muted">' + S.tot.pass + ' pass, ' + fmt(S.tot.h) + ' timmar, ' + S.tot.n + ' ' + malTxt + ' varav ' + S.tot.landade + ' landade' + (S.tot.andra ? ', ' + S.tot.andra + ' hugg av andra arter' : '') + (S.tot.foljare ? ', ' + S.tot.foljare + ' följare' : '') + '. Snitt ' + fmt(S.R, 2) + ' ' + malTxt + ' per timme.</p>';
   if (!S.tot.n) html += '<p class="note warn">Inga ' + malTxt + ' i loggen än. Tabellerna visar bara var du har fiskat. Appens poäng bygger tills vidare på forskningen om arten.</p>';
   else if (S.tot.n < 30) html += '<p class="note warn">Med ' + S.tot.n + ' ' + malTxt + ' är de flesta skillnader nedan slump. Titta på spannet: bara rader markerade <b class="hit">tydlig</b> skiljer sig så mycket att slumpen sannolikt inte räcker som förklaring. Det kräver också minst 3 pass i läget och hugg från minst 2 olika pass, eftersom ett enda bra pass annars kan se ut som ett mönster.</p>';
-  html += '<p class="muted small">Index 100 är ditt snitt. Spannet under visar var det sanna värdet troligen ligger (90 %). Ju färre timmar och hugg, desto bredare spann.</p>';
+  // Ån: karta och täckning först, det är där man ser vad man vet och inte vet
+  var utan = sessions.filter(function(p){ return !p.pos; }).length;
+  html += '<h2>Ån</h2><div id="map" class="map" role="img" aria-label="Karta över Rönne å med dina platser och hugg"></div>' +
+    '<p class="muted small">Stor ring = många timmar på platsen. Orange fyllning = platsen har gett ' + esc(malTxt) + '. Små prickar är hugg med GPS, orange för ' + esc(MAL === "Alla" ? "alla arter" : MAL.toLowerCase()) + ', blå för andra arter.' + (utan ? ' ' + utan + ' äldre pass saknar GPS och syns inte.' : '') + '</p>';
+  html += '<h2>Vad du vet och inte vet</h2><p class="muted small">Timmar du fiskat i varje läge. "aldrig" betyder att appen inte vet något om läget än. Där lär ett pass mest.</p>';
+  html += coverageHtml("Havsnivå och ljus", ["Lågt", "Medel", "Högt"], function(c){ var b = nivaB(c.niva); return b ? b.split(",")[0] : null; });
+  html += coverageHtml("Avstånd från mynningen och ljus", ["0–1 km från mynningen", "1–3 km", "3–6 km", "Över 6 km"], function(c, s){ return mynB(s.mynningKm); });
+  if (utan) html += '<p class="muted small">' + utan + ' pass utan GPS-position saknas i avståndstabellen.</p>';
+  html += '<h2>Faktor för faktor</h2><p class="muted small">Index 100 är ditt snitt. Spannet under visar var det sanna värdet troligen ligger (90 %). Ju färre timmar och hugg, desto bredare spann.</p>';
   FACTORS.concat(PASSFACT).forEach(function(f){
     var rows = Object.keys(S[f.k]).map(function(b){ var o = S[f.k][b]; return { b: b, h: o.h, n: o.n, np: Object.keys(o.p || {}).length, nbp: Object.keys(o.bp || {}).length }; }).filter(function(r){ return r.h > 0 || r.n > 0; });
     if (!rows.length) return;
@@ -1371,7 +1513,7 @@ function renderAnalys(){
   if (len.length){ len.sort(function(a, b){ return a - b; }); html += '<h3>Storlek</h3><p>' + len.length + ' mätta fiskar. Median ' + fmt(len[Math.floor(len.length/2)], 0) + ' cm, största ' + fmt(len[len.length - 1], 0) + ' cm.</p>'; }
   var noT = sessions.reduce(function(a, p){ return a + (p.hugg || []).filter(function(h){ return !h.t; }).length; }, 0);
   if (noT) html += '<p class="note">' + noT + ' hugg saknar klockslag och räknas mitt i sitt pass. Lägg in tiden under Ändra om du minns den.</p>';
-  el.innerHTML = html; bindMal();
+  el.innerHTML = html; bindMal(); renderMap(S);
 }
 function bindMal(){ $("malart").addEventListener("change", function(){ MAL = this.value; save(K.mal, MAL); renderAll(); renderAnalys(); }); }
 // 90 % konfidensintervall för antal händelser i en Poissonprocess (Wilson–Hilferty)
