@@ -1624,22 +1624,37 @@ function renderMap(S){
     var fly = cssVar("--fly"), water = cssVar("--water"), ink = cssVar("--ink"), pts = [];
     L.polyline(RIVER, { color: water, weight: 4, opacity: .5 }).addTo(mapObj);
     L.circleMarker(RIVER[0], { radius: 5, color: water, fillColor: water, fillOpacity: 1 }).addTo(mapObj).bindPopup("Mynningen");
-    var spots = {};
-    knownSpots().forEach(function(k){ if (!spots[k.namn]) spots[k.namn] = k; });
-    Object.keys(spots).forEach(function(namn){
-      var k = spots[namn], st = (S.plats && S.plats[namn]) || { h: 0, n: 0 }, km = riverKm(k.pos);
-      var m = L.circleMarker([k.pos.lat, k.pos.lng], { radius: 7 + Math.sqrt(st.h)*3, color: ink, weight: 2, fillColor: st.n ? fly : cssVar("--paper"), fillOpacity: .9 }).addTo(mapObj);
-      m.bindPopup('<b>' + esc(namn) + '</b><br>' + [k.struktur, km != null ? fmt(km) + " km från mynningen" : ""].filter(Boolean).map(esc).join(", ") + '<br>' + fmt(st.h) + ' timmar, ' + st.n + ' ' + esc(huggOrd()));
-      pts.push([k.pos.lat, k.pos.lng]);
+    // Platser på samma ställe (inom 40 m) blir en ring, även om de har olika namn
+    var groups = [], byName = {};
+    knownSpots().forEach(function(k){
+      if (byName[k.namn]) return;
+      var g = groups.filter(function(x){ return distM(x.pos, k.pos) <= 40; })[0];
+      if (!g){ g = { pos: k.pos, namn: [], struktur: [], h: 0, n: 0, arter: {} }; groups.push(g); }
+      g.namn.push(k.namn); if (k.struktur && g.struktur.indexOf(k.struktur) < 0) g.struktur.push(k.struktur);
+      var st = (S.plats && S.plats[k.namn]) || { h: 0, n: 0 }; g.h += st.h; g.n += st.n; byName[k.namn] = g;
+    });
+    // Var stod du vid ett hugg: platshändelsen före hugget, annars passets startplats
+    function standAt(p, t){ var pos = p.pos; (p.logg || []).forEach(function(e){ if (e.typ === "plats" && e.pos && (!t || e.t <= t)) pos = e.pos; }); return pos; }
+    sessions.forEach(function(p){ (p.hugg || []).forEach(function(h){
+      if (!isHugg(h)) return; var g = byName[stateAt(p, h.t || p.start).plats]; if (!g) return;
+      var a = h.art || "okänd art"; g.arter[a] = (g.arter[a] || 0) + 1;
+    }); });
+    groups.forEach(function(g){
+      var km = riverKm(g.pos), alla = Object.keys(g.arter).reduce(function(a, k){ return a + g.arter[k]; }, 0);
+      var m = L.circleMarker([g.pos.lat, g.pos.lng], { radius: 7 + Math.sqrt(g.h)*3, color: ink, weight: 2, fillColor: g.n ? fly : alla ? water : cssVar("--paper"), fillOpacity: .9 }).addTo(mapObj);
+      m.bindPopup('<b>' + g.namn.map(esc).join("<br>") + '</b><br>' + [g.struktur.join(", "), km != null ? fmt(km) + " km från mynningen" : ""].filter(Boolean).map(esc).join(", ") +
+        '<br>' + fmt(g.h) + (fmt(g.h) === "1" ? ' timme' : ' timmar') + (MAL !== "Alla" ? ', ' + g.n + ' ' + esc(huggOrd()) : '') +
+        '<br>Alla hugg: ' + alla + (alla ? ' (' + Object.keys(g.arter).sort(function(a, b){ return g.arter[b] - g.arter[a]; }).map(function(k){ return esc(k) + ' ' + g.arter[k]; }).join(", ") + ')' : ''));
+      pts.push([g.pos.lat, g.pos.lng]);
     });
     sessions.forEach(function(p){
       (p.hugg || []).forEach(function(h){
-        var at = h.kast || h.pos;
+        var at = h.kast || h.pos || standAt(p, h.t);
         if (!at || !isHugg(h)) return;
         var mal = isMal(h);
         if (h.kast && h.pos) L.polyline([[h.pos.lat, h.pos.lng], [h.kast.lat, h.kast.lng]], { color: mal ? fly : water, weight: 2, dashArray: "4 5", opacity: .8 }).addTo(mapObj);
         L.circleMarker([at.lat, at.lng], { radius: 5, color: mal ? fly : water, weight: 2, fillColor: mal ? fly : water, fillOpacity: mal ? 1 : .5 }).addTo(mapObj)
-          .bindPopup(esc([hm(h.t), dateLong(h.t), h.art, h.utfall, h.langd != null ? fmt(h.langd, 0) + " cm" : "", kastText(h)].filter(Boolean).join(", ")));
+          .bindPopup(esc([h.t ? hm(h.t) + ", " + dateLong(h.t) : dateLong(p.start) + ", okänd tid", h.art, h.utfall, h.langd != null ? fmt(h.langd, 0) + " cm" : "", kastText(h)].filter(Boolean).join(", ")));
         pts.push([at.lat, at.lng]);
       });
     });
@@ -1707,7 +1722,7 @@ function renderAnalys(){
   // Ån: karta och täckning, det är där man ser vad man vet och inte vet
   var utan = sessions.filter(function(p){ return !p.pos; }).length;
   html += '<h2>Ån</h2><div id="map" class="map" role="img" aria-label="Karta över Rönne å med dina platser och hugg"></div>' +
-    '<p class="muted small">Stor ring = många timmar på platsen. Orange fyllning = platsen har gett ' + esc(malTxt) + '. Små prickar är hugg, där fisken stod om du markerat det (streckad linje från där du stod), orange för ' + esc(MAL === "Alla" ? "alla arter" : MAL.toLowerCase()) + ', blå för andra arter.' + (utan ? ' ' + utan + ' äldre pass saknar GPS och syns inte.' : '') + '</p>';
+    '<p class="muted small">Stor ring = många timmar på platsen. Orange fyllning = platsen har gett ' + esc(malTxt) + ', blå = bara andra arter. Tryck på en ring för alla hugg per art. Små prickar är hugg, där fisken stod om du markerat det (streckad linje från där du stod), orange för ' + esc(MAL === "Alla" ? "alla arter" : MAL.toLowerCase()) + ', blå för andra arter.' + (utan ? ' ' + utan + ' äldre pass saknar GPS och syns inte.' : '') + '</p>';
   html += '<h2>Vad du vet och inte vet</h2><p class="muted small">Timmar du fiskat i varje läge. "aldrig" betyder att appen inte vet något om läget än. Där lär ett pass mest.</p>';
   html += coverageHtml("Havsnivå och ljus", ["Lågt", "Medel", "Högt"], function(c){ var b = nivaB(c.niva); return b ? b.split(",")[0] : null; });
   html += coverageHtml("Avstånd från mynningen och ljus", ["0–1 km från mynningen", "1–3 km", "3–6 km", "Över 6 km"], function(c, s){ return mynB(s.mynningKm); });
