@@ -228,6 +228,8 @@ h3{font-family:var(--display);font-weight:600;font-size:20px;margin:22px 0 4px}
 .pick-bar .btn[hidden]{display:none}
 .pick .leaflet-control-zoom a{width:44px;height:44px;line-height:44px;font-size:24px}
 .kastbtn{grid-column:1/-1;justify-self:start}
+.concl{margin:4px 0 8px;padding-left:20px}
+.concl li{margin-bottom:8px;max-width:68ch}
 .map{isolation:isolate;position:relative;z-index:0;height:340px;border-radius:10px;border:1px solid var(--line);overflow:hidden;background:var(--paper);margin-top:6px}
 table.cov td.cv{text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums;border:2px solid var(--bg);padding:8px 6px}
 table.cov th{text-align:center}
@@ -1436,6 +1438,141 @@ function lessons(p){
 function lessonHtml(p, title){
   return '<div class="lesson"><b>' + esc(title || "Det här lärde passet oss") + '</b><ul>' + lessons(p).map(function(t){ return '<li>' + esc(t) + '</li>'; }).join("") + '</ul></div>';
 }
+/* ---------- Slutsatser ---------- */
+// Alla kvartar i loggen med sina lägen, och alla hugg av målarten. Grunden för slutsatserna.
+function allSteps(){
+  var steps = [], hits = [];
+  function buckets(c, s){ var b = {}; FACTORS.forEach(function(f){ b[f.k] = f.of(c); }); PASSFACT.forEach(function(f){ b[f.k] = f.of(s); }); return b; }
+  sessions.forEach(function(p){
+    var hours = passHours(p), n = Math.max(1, Math.ceil(hours*4)), w = hours/n;
+    for (var i = 0; i < n; i++){ var t = p.start + (i + 0.5)*(p.end - p.start)/n; steps.push({ w: w, p: p.id, b: buckets(condFor(p, t), stateAt(p, t)) }); }
+    (p.hugg || []).forEach(function(h){ if (!isMal(h)) return; var t = h.t || (p.start + p.end)/2; hits.push({ p: p.id, h: h, b: buckets(condFor(p, t), stateAt(p, t)) }); });
+  });
+  return { steps: steps, hits: hits };
+}
+function ciZ(n, z){ function chi2(k, zz){ var a = 2/(9*k); return k*Math.pow(1 - a + zz*Math.sqrt(a), 3); } return [n ? chi2(2*n, -z)/2 : 0, chi2(2*n + 2, z)/2]; }
+function gangerText(x){
+  if (x >= 1.15) return "ungefär " + fmt(x, 1) + " gånger ditt snitt";
+  if (x <= .85 && x >= .15) return "ungefär " + Math.round(x*100) + " % av ditt snitt";
+  if (x < .15) return "långt under ditt snitt";
+  return "ungefär som ditt snitt";
+}
+var LJUSORD = { Morgon: "morgonljus", Dag: "dagsljus", "Kväll": "kvällsljus", "Mörker": "mörker" };
+var FKEY = {}; FACTORS.concat(PASSFACT).forEach(function(f){ FKEY[f.k] = f; });
+function labelOf(k, b){ return (FKEY[k] ? FKEY[k].namn : k) + ": " + (k === "plats" || k === "modell" ? b : b.toLowerCase()); }
+function slutsatserHtml(S){
+  var D = allSteps(), w = huggOrd(), html = '<h2>Slutsatser</h2>';
+  var tot = S.tot;
+  // 1. Det loggen visar
+  var lines = [];
+  if (!tot.n) lines.push("Inga " + w + " på " + fmt(tot.h) + " timmar. Det går inte att läsa ut något mönster än, så appen bygger på forskningen.");
+  else {
+    var cands = [];
+    ["ljus", "salt", "niva", "nivaTrend", "vtemp", "klarhet", "plats", "struktur", "mynning", "bete", "modell", "farg", "vikt", "bytesfisk"].forEach(function(k){
+      Object.keys(S[k] || {}).forEach(function(b){
+        var o = S[k][b], np = Object.keys(o.p || {}).length, nbp = Object.keys(o.bp || {}).length;
+        if (o.h < 1 || !S.R) return;
+        var x = (o.n/o.h)/S.R, c90 = ciZ(o.n, 1.6449), c80 = ciZ(o.n, 1.2816), e = o.h*S.R;
+        var lo90 = c90[0]/e, hi90 = c90[1]/e, lo80 = c80[0]/e, hi80 = c80[1]/e, lvl = 0;
+        if ((lo90 > 1 || hi90 < 1) && np >= 3 && (hi90 < 1 || nbp >= 2)) lvl = 3;
+        else if ((lo80 > 1 || hi80 < 1) && np >= 2) lvl = 2;
+        else if ((x >= 1.5 && o.n >= 2) || (x <= .5 && o.h >= 3)) lvl = 1;
+        if (lvl) cands.push({ k: k, b: b, o: o, x: x, lvl: lvl, np: np, s: Math.abs(Math.log(Math.max(x, .05)))*Math.sqrt(o.h) });
+      });
+    });
+    cands.sort(function(a, b){ return b.lvl - a.lvl || b.s - a.s; });
+    var LVL = ["", "Ett tecken, kan vara slump.", "Troligt, men inte säkert.", "Tydligt."];
+    // Samvariation: läget som nästan alla timmar i (k, b) också hade. Då går de två inte att skilja åt.
+    function partner(k, b){
+      var same = D.steps.filter(function(st){ return st.b[k] === b; }), hw = same.reduce(function(a, st){ return a + st.w; }, 0), hit = null;
+      ["ljus", "niva", "plats", "struktur", "mynning", "bete", "modell"].filter(function(k2){ return k2 !== k; }).some(function(k2){
+        var share = {}; same.forEach(function(st){ var v = st.b[k2]; if (v) share[v] = (share[v] || 0) + st.w; });
+        var top = Object.keys(share).sort(function(a, b){ return share[b] - share[a]; })[0]; if (!top) return false;
+        var all = D.steps.reduce(function(a, st){ return a + (st.b[k2] === top ? st.w : 0); }, 0)/Math.max(tot.h, .01);
+        if (share[top]/hw >= .8 && all < .6){ hit = { k: k2, b: top }; return true; }
+        return false;
+      });
+      return hit;
+    }
+    // Bästa positiva och bästa negativa först, sedan det starkaste av resten. Fynd som hänger ihop visas en gång.
+    var pos = cands.filter(function(c){ return c.x > 1; }), neg = cands.filter(function(c){ return c.x < 1; });
+    var order = [pos[0], neg[0]].filter(Boolean).sort(function(a, b){ return b.lvl - a.lvl || b.s - a.s; }).concat(cands), shown = [], keys = {};
+    order.forEach(function(c){
+      if (shown.length >= 3 || shown.indexOf(c) >= 0) return;
+      var pt = partner(c.k, c.b);
+      if ((pt && keys[pt.k + "|" + pt.b]) || keys[c.k]) return;
+      shown.push(c); keys[c.k + "|" + c.b] = 1; keys[c.k] = 1; c.pt = pt;
+    });
+    shown.forEach(function(c){
+      var t = labelOf(c.k, c.b) + ": " + c.o.n + " " + w + " på " + fmt(c.o.h) + " timmar (" + c.np + " pass), " + gangerText(c.x) + ". " + LVL[c.lvl];
+      if (c.pt){ var l = labelOf(c.pt.k, c.pt.b); t += " Obs: nästan alla de timmarna var också " + l.charAt(0).toLowerCase() + l.slice(1) + ", så det kan lika gärna vara det."; }
+      lines.push(t);
+    });
+    if (!cands.length) lines.push(tot.n + " " + w + " på " + fmt(tot.h) + " timmar. Inget läge sticker ut än, skillnaderna ryms inom slumpen.");
+  }
+  html += '<h3>Det din logg visar</h3><ul class="concl">' + lines.map(function(t){ return '<li>' + esc(t) + '</li>'; }).join("") + '</ul>';
+
+  // 2. Stämmer forskningen?
+  var res = [];
+  function rateText(k, list){
+    return list.map(function(b){ var o = S[k][b] || { h: 0, n: 0 }; return b.toLowerCase() + " " + fmt(o.h) + " h, " + o.n + " " + w; }).join("; ");
+  }
+  function verdictFor(k, good, bad){
+    var g = { h: 0, n: 0 }, d = { h: 0, n: 0 };
+    good.forEach(function(b){ var o = S[k][b]; if (o){ g.h += o.h; g.n += o.n; } });
+    bad.forEach(function(b){ var o = S[k][b]; if (o){ d.h += o.h; d.n += o.n; } });
+    if (g.h < 2 || d.h < 2) return "För få timmar i båda lägena för att jämföra.";
+    if (g.n + d.n < 5) return "För få " + w + " för att säga om det stämmer.";
+    var rg = g.n/g.h, rd = d.n/d.h;
+    return rg > rd*1.3 ? "Din logg går åt samma håll." : rd > rg*1.3 ? "Din logg säger emot, värt att hålla ögonen på." : "Ingen tydlig skillnad i din logg.";
+  }
+  res.push("Ljus. Forskningen: abborre jagar med synen och är mest aktiv i gryning och kvällsljus, nästan inget i mörker. Din logg: " + rateText("ljus", ["Gryning", "Morgonljus", "Dagsljus", "Kvällsljus", "Skymning"]) + ". " + verdictFor("ljus", ["Gryning", "Morgonljus", "Kvällsljus"], ["Dagsljus"]));
+  var saltN = sessions.filter(function(p){ return p.matt && p.matt.salt != null; }).length;
+  res.push("Salthalt. Forskningen: sötvattensabborre klarar upp till ca 10 ‰. " + (saltN ? "Du har mätt salthalt på " + saltN + " pass. " + verdictFor("salt", ["Under 2 ‰", "2–6 ‰"], ["6–10 ‰", "Över 10 ‰"]) : "Du har inte mätt salthalt än, så det går inte att jämföra."));
+  res.push("Havet. Forskningen pekar på att stigande och högt hav trycker in saltvatten och är sämre för abborre nära mynningen. Din logg: " + rateText("nivaTrend", ["Stigande", "Stabilt", "Sjunkande"]) + ". " + verdictFor("nivaTrend", ["Sjunkande"], ["Stigande"]));
+  var vtN = sessions.filter(function(p){ return (p.matt && p.matt.vtemp != null) || (p.manuellt && p.manuellt.vtemp != null); }).length;
+  res.push("Vattentemp. Forskningen: aktiviteten faller kraftigt under ca 4 °C. " + (vtN ? "Du har vattentemp från " + vtN + " pass. " + (S.vtemp["Under 4 °C"] ? verdictFor("vtemp", ["4–10 °C", "10–18 °C"], ["Under 4 °C"]) : "Inget pass under 4 °C än, så den delen går inte att pröva.") : "Inga egna mätningar än."));
+  if (MAL !== "Abborre" && MAL !== "Alla") res = ["Forskningen i appen gäller abborre. Byt målart till Abborre för att jämföra."];
+  html += '<h3>Stämmer forskningen?</h3><ul class="concl">' + res.map(function(t){ return '<li>' + esc(t) + '</li>'; }).join("") + '</ul>';
+
+  // 3. Nästa pass
+  var next = [], cell = {};
+  D.steps.forEach(function(st){ var n = st.b.niva && st.b.niva.split(",")[0], l = ljusGrp(st.b.ljus); if (n && l) cell[n + "|" + l] = (cell[n + "|" + l] || 0) + st.w; });
+  var wins = []; try { wins = buildWindows(S); } catch(e){}
+  var picked = 0;
+  wins.forEach(function(x){
+    if (picked >= 2) return;
+    var nv = nivaB(x.c.niva), l = ljusGrp(x.w.phases[0]); if (!nv || !l) return;
+    var key = nv.split(",")[0] + "|" + l, h = cell[key] || 0;
+    if (h < 1){ next.push(winLabel(x.w) + ": " + nv.split(",")[0].toLowerCase() + " vatten i " + LJUSORD[l] + ". Där har du " + (h < .25 ? "aldrig fiskat" : "bara " + fmt(h) + " h") + "."); picked++; cell[key] = 99; }
+  });
+  var myn = {}; D.steps.forEach(function(st){ if (st.b.mynning) myn[st.b.mynning] = (myn[st.b.mynning] || 0) + st.w; });
+  var tom = ["0–1 km från mynningen", "1–3 km", "3–6 km", "Över 6 km"].filter(function(b){ return (myn[b] || 0) < .5; });
+  if (tom.length && tom.length < 4) next.push("Du har knappt fiskat " + tom.map(function(b){ return b.replace(" från mynningen", ""); }).join(" och ") + " från mynningen. En annan sträcka av ån lär dig mer än en till timme på samma plats.");
+  var bh = {}; D.steps.forEach(function(st){ var b = st.b.modell || st.b.bete; if (b) bh[b] = (bh[b] || 0) + st.w; });
+  var topB = Object.keys(bh).sort(function(a, b){ return bh[b] - bh[a]; })[0];
+  if (topB && bh[topB]/Math.max(tot.h, .01) >= .6) next.push(Math.round(bh[topB]/tot.h*100) + " % av timmarna med " + topB + ". Byt till ett annat bete halva passet, så går beten att jämföra under samma förhållanden.");
+  if (!next.length) next.push("Inga tydliga luckor i veckans prognos. Fortsätt variera plats och tid på dygnet.");
+  html += '<h3>Nästa pass</h3><ul class="concl">' + next.map(function(t){ return '<li>' + esc(t) + '</li>'; }).join("") + '</ul>';
+
+  // 4. Brister i datan
+  var fix = [], noT = 0, noKast = 0, KAST_FROM = Date.parse("2026-10-17T00:00:00+02:00");
+  sessions.forEach(function(p){ (p.hugg || []).forEach(function(h){ if (!isHugg(h)) return; if (!h.t) noT++; else if (h.t >= KAST_FROM && !h.kast) noKast++; }); });
+  var temp = {}, noStr = {};
+  knownSpots().forEach(function(k){ if (isTempName(k.namn)) temp[k.namn] = 1; else if (!k.struktur) noStr[k.namn] = 1; });
+  var noPos = sessions.filter(function(p){ return !p.pos; }).length;
+  if (noT) fix.push(noT + " hugg saknar klockslag och räknas mitt i passet. Lägg in ungefärlig tid under Ändra.");
+  if (Object.keys(temp).length) fix.push(Object.keys(temp).length + " platser heter fortfarande ”Ny plats …”. Namnge dem under Ändra, annars blir platstabellerna svåra att läsa.");
+  if (Object.keys(noStr).length) fix.push("Struktur saknas för " + Object.keys(noStr).slice(0, 4).join(", ") + (Object.keys(noStr).length > 4 ? " med flera" : "") + ". Välj under Ändra, det görs en gång per plats.");
+  if (noKast) fix.push(noKast + " hugg är inte markerade på kartan. Gör det under Ändra medan du minns.");
+  if (noPos) fix.push(noPos + " pass saknar GPS-position och syns inte på kartan.");
+  var recent = sessions.slice().sort(function(a, b){ return b.start - a.start; }).slice(0, 5), mt = recent.filter(function(p){ return p.matt && (p.matt.vtemp != null || p.matt.salt != null); }).length;
+  if (recent.length >= 3 && mt < recent.length) fix.push("Vattnet mätt på " + mt + " av dina " + recent.length + " senaste pass. Temperatur och salthalt är det appen har svårast att få fram på annat sätt.");
+  if (!fix.length) fix.push("Inget att rätta.");
+  html += '<h3>Brister i datan</h3><ul class="concl">' + fix.map(function(t){ return '<li>' + esc(t) + '</li>'; }).join("") + '</ul>';
+  return html;
+}
+
 // Täckning: var har du fiskat och var vet du ingenting än
 function ljusGrp(l){ return l === "Gryning" || l === "Morgonljus" ? "Morgon" : l === "Dagsljus" ? "Dag" : l === "Kvällsljus" || l === "Skymning" ? "Kväll" : l === "Mörker" ? "Mörker" : null; }
 function coverageHtml(title, rows, rowOf){
@@ -1566,7 +1703,8 @@ function renderAnalys(){
   html += '<p class="muted">' + S.tot.pass + ' pass, ' + fmt(S.tot.h) + ' timmar, ' + S.tot.n + ' ' + malTxt + ' varav ' + S.tot.landade + ' landade' + (S.tot.andra ? ', ' + S.tot.andra + ' hugg av andra arter' : '') + (S.tot.foljare ? ', ' + S.tot.foljare + ' följare' : '') + '. Snitt ' + fmt(S.R, 2) + ' ' + malTxt + ' per timme.</p>';
   if (!S.tot.n) html += '<p class="note warn">Inga ' + malTxt + ' i loggen än. Tabellerna visar bara var du har fiskat. Appens poäng bygger tills vidare på forskningen om arten.</p>';
   else if (S.tot.n < 30) html += '<p class="note warn">Med ' + S.tot.n + ' ' + malTxt + ' är de flesta skillnader nedan slump. Titta på spannet: bara rader markerade <b class="hit">tydlig</b> skiljer sig så mycket att slumpen sannolikt inte räcker som förklaring. Det kräver också minst 3 pass i läget och hugg från minst 2 olika pass, eftersom ett enda bra pass annars kan se ut som ett mönster.</p>';
-  // Ån: karta och täckning först, det är där man ser vad man vet och inte vet
+  html += slutsatserHtml(S);
+  // Ån: karta och täckning, det är där man ser vad man vet och inte vet
   var utan = sessions.filter(function(p){ return !p.pos; }).length;
   html += '<h2>Ån</h2><div id="map" class="map" role="img" aria-label="Karta över Rönne å med dina platser och hugg"></div>' +
     '<p class="muted small">Stor ring = många timmar på platsen. Orange fyllning = platsen har gett ' + esc(malTxt) + '. Små prickar är hugg, där fisken stod om du markerat det (streckad linje från där du stod), orange för ' + esc(MAL === "Alla" ? "alla arter" : MAL.toLowerCase()) + ', blå för andra arter.' + (utan ? ' ' + utan + ' äldre pass saknar GPS och syns inte.' : '') + '</p>';
