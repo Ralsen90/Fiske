@@ -212,6 +212,22 @@ h3{font-family:var(--display);font-weight:600;font-size:20px;margin:22px 0 4px}
 .lesson.big{margin:4px 0 18px;padding-right:44px}
 .lesson.big b{font-size:22px}
 .lesson .x{position:absolute;top:2px;right:2px}
+.pick{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;background:var(--bg)}
+.pick[hidden]{display:none}
+.pick-head{padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;display:flex;flex-direction:column;gap:2px}
+.pick-head b{font:600 24px var(--display)}
+.pick-head span{color:var(--muted);font-size:15px}
+.pick-wrap{position:relative;flex:1;isolation:isolate}
+#pickMap{position:absolute;inset:0}
+.cross{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;z-index:1000;pointer-events:none}
+.cross::before,.cross::after{content:"";position:absolute;background:var(--fly);box-shadow:0 0 0 2px #fff}
+.cross::before{left:50%;top:0;bottom:0;width:3px;margin-left:-1.5px}
+.cross::after{top:50%;left:0;right:0;height:3px;margin-top:-1.5px}
+.pick-bar{display:flex;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px))}
+.pick-bar .btn{flex:1;padding:10px 6px;font-size:16px}
+.pick-bar .btn[hidden]{display:none}
+.pick .leaflet-control-zoom a{width:44px;height:44px;line-height:44px;font-size:24px}
+.kastbtn{grid-column:1/-1;justify-self:start}
 .map{isolation:isolate;position:relative;z-index:0;height:340px;border-radius:10px;border:1px solid var(--line);overflow:hidden;background:var(--paper);margin-top:6px}
 table.cov td.cv{text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums;border:2px solid var(--bg);padding:8px 6px}
 table.cov th{text-align:center}
@@ -332,6 +348,11 @@ table.cov th{text-align:center}
   </section>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="pick" id="pick" hidden role="dialog" aria-modal="true" aria-labelledby="pickTitle">
+  <div class="pick-head"><b id="pickTitle">Var högg det?</b><span id="pickInfo">Flytta kartan så att krysset hamnar där betet var.</span></div>
+  <div class="pick-wrap"><div id="pickMap"></div><div class="cross" aria-hidden="true"></div></div>
+  <div class="pick-bar"><button class="btn primary" id="pickOk" style="flex:2">Spara</button><button class="btn" id="pickSat">Karta</button><button class="btn" id="pickClear">Ta bort</button><button class="btn" id="pickCancel">Avbryt</button></div>
+</div>
 <script>
 (function(){
 "use strict";
@@ -1067,7 +1088,8 @@ function renderPass(){
     $("bytesBtn").textContent = by ? "Bytesfisk sedd (" + by + ")" : "Bytesfisk sedd";
     if (!$("aktivHugg").contains(document.activeElement)) $("aktivHugg").innerHTML = aktiv.hugg.length ? aktiv.hugg.map(function(h, i){
       return '<div class="hrow"><span class="ht">' + hm(h.t) + '</span><select data-i="' + i + '" data-f="utfall" aria-label="Utfall">' + opts(UTFALL, h.utfall) + '</select><select data-i="' + i + '" data-f="art" aria-label="Art">' + opts(ARTER, h.art) + '</select>' +
-        '<input class="len" data-i="' + i + '" data-f="langd" inputmode="decimal" placeholder="cm" aria-label="Längd i cm" value="' + esc(h.langd == null ? "" : h.langd) + '"></div>';
+        '<input class="len" data-i="' + i + '" data-f="langd" inputmode="decimal" placeholder="cm" aria-label="Längd i cm" value="' + esc(h.langd == null ? "" : h.langd) + '">' +
+        '<button type="button" class="btn small kastbtn" data-kast="' + i + '">' + (h.kast ? "Var det högg: " + esc(kastText(h)) : "Markera var det högg") + '</button></div>';
     }).join("") : '<p class="muted">Tryck på Hugg! direkt när det händer. Tid, plats och bete sparas av sig själv. Rätta art och utfall efteråt om det behövs.</p>';
     var m = aktiv.matt || {};
     if (document.activeElement !== $("m_vtemp")) $("m_vtemp").value = m.vtemp == null ? "" : String(m.vtemp).replace(".", ",");
@@ -1106,6 +1128,11 @@ $("huggBtn").addEventListener("click", function(){
   if (navigator.vibrate) navigator.vibrate(60);
   toast("Hugg " + hm(t), function(){ var i = aktiv ? aktiv.hugg.indexOf(h) : -1; if (i >= 0){ aktiv.hugg.splice(i, 1); saveAktiv(); renderPass(); toast("Hugget borttaget"); } });
   locate(t).then(function(s){ if (s && aktiv && aktiv.hugg.indexOf(h) >= 0){ h.pos = s.pos; saveAktiv(); } });
+});
+$("aktivHugg").addEventListener("click", function(ev){
+  var k = ev.target.closest("[data-kast]"); if (!k) return;
+  var h = aktiv.hugg[+k.dataset.kast], sp = curSpot();
+  openPicker(h, sp && sp.pos, function(v){ if (!aktiv || aktiv.hugg.indexOf(h) < 0) return; if (v) h.kast = v; else delete h.kast; saveAktiv(); renderPass(); });
 });
 $("bytesBtn").addEventListener("click", function(){ aktiv.logg.push({ t: Date.now(), typ: "bytesfisk" }); saveAktiv(); renderPass(); toast("Bytesfisk " + hm(Date.now())); });
 $("flyttBtn").addEventListener("click", function(){ locate(Date.now()).then(function(s){ toast(s ? s.plats : "Fick ingen position"); }); });
@@ -1225,7 +1252,8 @@ function renderFormHugg(){
       '<select data-i="' + i + '" data-f="utfall" aria-label="Utfall">' + opts(UTFALL, h.utfall) + '</select><select data-i="' + i + '" data-f="art" aria-label="Art">' + opts(ARTER, h.art) + '</select>' +
       '<button type="button" class="x" data-del="' + i + '" aria-label="Ta bort hugg">×</button>' +
       '<input style="grid-column:2" data-i="' + i + '" data-f="langd" inputmode="decimal" placeholder="Längd, cm" aria-label="Längd i cm" value="' + esc(h.langd == null ? "" : h.langd) + '">' +
-      (s && s.plats !== form.plats ? '<span class="muted small" style="grid-column:3/-1">' + esc(s.plats) + '</span>' : '') + '</div>';
+      '<button type="button" class="btn small" style="grid-column:3/-1;justify-self:start" data-kast="' + i + '">' + (h.kast ? esc(kastText(h)) : "Markera") + '</button>' +
+      (s && s.plats !== form.plats ? '<span class="muted small" style="grid-column:1/-1">' + esc(s.plats) + '</span>' : '') + '</div>';
   }).join("") : '<p class="muted small">Inga hugg.</p>';
 }
 function timeInPass(val){
@@ -1238,7 +1266,13 @@ $("f_hugg").addEventListener("change", function(ev){
   var s = ev.target, i = +s.dataset.i; if (!s.dataset.f) return;
   form.hugg[i][s.dataset.f] = s.dataset.f === "t" ? timeInPass(s.value) : s.dataset.f === "langd" ? num(s.value) : s.value;
 });
-$("f_hugg").addEventListener("click", function(ev){ var b = ev.target.closest("[data-del]"); if (b){ form.hugg.splice(+b.dataset.del, 1); renderFormHugg(); } });
+$("f_hugg").addEventListener("click", function(ev){
+  var b = ev.target.closest("[data-del]"); if (b){ form.hugg.splice(+b.dataset.del, 1); renderFormHugg(); return; }
+  var k = ev.target.closest("[data-kast]"); if (!k) return;
+  var h = form.hugg[+k.dataset.kast], s = h.t ? stateAt(form, h.t) : null, sp = null;
+  if (h.t) (form.logg || []).forEach(function(e){ if (e.typ === "plats" && e.t <= h.t && e.pos) sp = e.pos; });
+  openPicker(h, sp || form.pos, function(v){ if (v) h.kast = v; else delete h.kast; renderFormHugg(); });
+});
 $("addHugg").addEventListener("click", function(){ form.hugg.push({ t: form.start ? Math.min(form.end || Date.now(), form.start + H) : null, utfall: "Hugg", art: MAL === "Alla" ? "Abborre" : MAL }); renderFormHugg(); });
 $("f_plats").addEventListener("change", function(){
   if (this.value !== "__ny") return;
@@ -1328,7 +1362,7 @@ function renderBook(){
     var n = (p.hugg || []).filter(isMal).length, hrs = passHours(p);
     var hugg = (p.hugg || []).map(function(h){
       var c = h.t ? condFor(p, h.t) : null, s = h.t ? stateAt(p, h.t) : null;
-      return '<li><b>' + (h.t ? hm(h.t) : "Okänd tid") + '</b> ' + esc([h.utfall, h.art, h.langd != null ? fmt(h.langd, 0) + " cm" : ""].filter(Boolean).join(", ")) +
+      return '<li><b>' + (h.t ? hm(h.t) : "Okänd tid") + '</b> ' + esc([h.utfall, h.art, h.langd != null ? fmt(h.langd, 0) + " cm" : "", h.kast ? "högg " + kastText(h) : ""].filter(Boolean).join(", ")) +
         (c ? '<span class="muted small"> · ' + esc([c.ljus, c.niva != null ? "hav " + sign(c.niva, 0) + (c.nivaTrend ? " " + c.nivaTrend.toLowerCase() : "") : "", s && s.plats !== p.plats ? s.plats : "", s && riggText(s) !== riggText(p) ? riggText(s) : ""].filter(Boolean).join(", ")) + '</span>' : "") + '</li>';
     }).join("");
     (p.logg || []).forEach(function(e){
@@ -1463,11 +1497,13 @@ function renderMap(S){
     });
     sessions.forEach(function(p){
       (p.hugg || []).forEach(function(h){
-        if (!h.pos || !isHugg(h)) return;
+        var at = h.kast || h.pos;
+        if (!at || !isHugg(h)) return;
         var mal = isMal(h);
-        L.circleMarker([h.pos.lat, h.pos.lng], { radius: 5, color: mal ? fly : water, weight: 2, fillColor: mal ? fly : water, fillOpacity: mal ? 1 : .5 }).addTo(mapObj)
-          .bindPopup(esc([hm(h.t), dateLong(h.t), h.art, h.utfall, h.langd != null ? fmt(h.langd, 0) + " cm" : ""].filter(Boolean).join(", ")));
-        pts.push([h.pos.lat, h.pos.lng]);
+        if (h.kast && h.pos) L.polyline([[h.pos.lat, h.pos.lng], [h.kast.lat, h.kast.lng]], { color: mal ? fly : water, weight: 2, dashArray: "4 5", opacity: .8 }).addTo(mapObj);
+        L.circleMarker([at.lat, at.lng], { radius: 5, color: mal ? fly : water, weight: 2, fillColor: mal ? fly : water, fillOpacity: mal ? 1 : .5 }).addTo(mapObj)
+          .bindPopup(esc([hm(h.t), dateLong(h.t), h.art, h.utfall, h.langd != null ? fmt(h.langd, 0) + " cm" : "", kastText(h)].filter(Boolean).join(", ")));
+        pts.push([at.lat, at.lng]);
       });
     });
     // Vänta tills kartan har sin riktiga storlek, annars hamnar platser utanför bilden
@@ -1476,6 +1512,50 @@ function renderMap(S){
     setTimeout(function(){ if (mapObj){ mapObj.invalidateSize(); mapObj.fitBounds(bounds, { maxZoom: 16 }); } }, 150);
   }).catch(function(){ el.innerHTML = '<p class="muted small" style="padding:12px">Kartan kunde inte laddas. Den kräver nätverk.</p>'; });
 }
+
+
+// Markera var det högg: kartan flyttas under ett fast kryss i mitten
+var pk = { map: null, osm: null, sat: null, useSat: load("gh2-flygfoto", true), cb: null, from: null, fromM: null };
+function kastText(h){ return h.kast ? (h.pos ? "ca " + Math.round(distM(h.pos, h.kast)) + " m ut" : "markerad") : ""; }
+function openPicker(h, fallback, cb){
+  var from = h.pos || fallback || null, center = h.kast || from || { lat: LAT, lng: LNG };
+  pk.cb = cb; pk.from = from;
+  $("pick").hidden = false; $("pickClear").hidden = !h.kast;
+  $("pickInfo").textContent = "Flytta kartan så att krysset hamnar där betet var.";
+  loadLeaflet().then(function(){
+    if (!pk.map){
+      pk.map = L.map("pickMap", { zoomControl: false, attributionControl: true });
+      L.control.zoom({ position: "topright" }).addTo(pk.map);
+      pk.osm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" });
+      pk.sat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Flygfoto © Esri" });
+      L.polyline(RIVER, { color: cssVar("--water"), weight: 2, opacity: .4 }).addTo(pk.map);
+      pk.map.on("move", pickInfo);
+    }
+    setLayer();
+    if (pk.fromM){ pk.fromM.remove(); pk.fromM = null; }
+    if (from) pk.fromM = L.circleMarker([from.lat, from.lng], { radius: 7, color: "#fff", weight: 2, fillColor: cssVar("--ink"), fillOpacity: 1 }).addTo(pk.map).bindTooltip("Här stod du", { permanent: false });
+    pk.map.invalidateSize(); pk.map.setView([center.lat, center.lng], 18);
+    setTimeout(function(){ pk.map.invalidateSize(); pk.map.setView([center.lat, center.lng], 18); pickInfo(); }, 100);
+  }).catch(function(){ $("pick").hidden = true; toast("Kartan kräver nätverk. Markera hemma i stället."); });
+}
+function setLayer(){
+  if (pk.useSat){ pk.map.removeLayer(pk.osm); pk.sat.addTo(pk.map); } else { pk.map.removeLayer(pk.sat); pk.osm.addTo(pk.map); }
+  $("pickSat").textContent = pk.useSat ? "Karta" : "Flygfoto";
+}
+function pickInfo(){
+  if (!pk.map || !pk.from) return;
+  var c = pk.map.getCenter();
+  $("pickInfo").textContent = "Krysset är ca " + Math.round(distM(pk.from, { lat: c.lat, lng: c.lng })) + " m från där du stod.";
+}
+function closePicker(val){
+  $("pick").hidden = true;
+  if (document.activeElement) document.activeElement.blur();
+  var cb = pk.cb; pk.cb = null; if (cb && val !== undefined) cb(val);
+}
+$("pickOk").addEventListener("click", function(){ var c = pk.map && pk.map.getCenter(); closePicker(c ? { lat: round(c.lat, 6), lng: round(c.lng, 6) } : undefined); });
+$("pickClear").addEventListener("click", function(){ closePicker(null); });
+$("pickCancel").addEventListener("click", function(){ closePicker(); });
+$("pickSat").addEventListener("click", function(){ pk.useSat = !pk.useSat; save("gh2-flygfoto", pk.useSat); setLayer(); });
 
 /* ---------- Analys ---------- */
 function renderAnalys(){
@@ -1489,7 +1569,7 @@ function renderAnalys(){
   // Ån: karta och täckning först, det är där man ser vad man vet och inte vet
   var utan = sessions.filter(function(p){ return !p.pos; }).length;
   html += '<h2>Ån</h2><div id="map" class="map" role="img" aria-label="Karta över Rönne å med dina platser och hugg"></div>' +
-    '<p class="muted small">Stor ring = många timmar på platsen. Orange fyllning = platsen har gett ' + esc(malTxt) + '. Små prickar är hugg med GPS, orange för ' + esc(MAL === "Alla" ? "alla arter" : MAL.toLowerCase()) + ', blå för andra arter.' + (utan ? ' ' + utan + ' äldre pass saknar GPS och syns inte.' : '') + '</p>';
+    '<p class="muted small">Stor ring = många timmar på platsen. Orange fyllning = platsen har gett ' + esc(malTxt) + '. Små prickar är hugg, där fisken stod om du markerat det (streckad linje från där du stod), orange för ' + esc(MAL === "Alla" ? "alla arter" : MAL.toLowerCase()) + ', blå för andra arter.' + (utan ? ' ' + utan + ' äldre pass saknar GPS och syns inte.' : '') + '</p>';
   html += '<h2>Vad du vet och inte vet</h2><p class="muted small">Timmar du fiskat i varje läge. "aldrig" betyder att appen inte vet något om läget än. Där lär ett pass mest.</p>';
   html += coverageHtml("Havsnivå och ljus", ["Lågt", "Medel", "Högt"], function(c){ var b = nivaB(c.niva); return b ? b.split(",")[0] : null; });
   html += coverageHtml("Avstånd från mynningen och ljus", ["0–1 km från mynningen", "1–3 km", "3–6 km", "Över 6 km"], function(c, s){ return mynB(s.mynningKm); });
