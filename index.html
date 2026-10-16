@@ -1434,8 +1434,11 @@ function loadLeaflet(){
   if (window.L) return Promise.resolve();
   if (loadLeaflet._p) return loadLeaflet._p;
   return (loadLeaflet._p = new Promise(function(res, rej){
-    var c = document.createElement("link"); c.rel = "stylesheet"; c.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"; document.head.appendChild(c);
+    // Låst till exakt filinnehåll (SRI). Sidan har GitHub-nyckeln i localStorage, så ett ändrat skript ska inte kunna köras.
+    var c = document.createElement("link"); c.rel = "stylesheet"; c.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
+    c.integrity = "sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw=="; c.crossOrigin = "anonymous"; c.referrerPolicy = "no-referrer"; document.head.appendChild(c);
     var sc = document.createElement("script"); sc.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
+    sc.integrity = "sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g=="; sc.crossOrigin = "anonymous"; sc.referrerPolicy = "no-referrer";
     sc.onload = res; sc.onerror = function(){ loadLeaflet._p = null; rej(); }; document.head.appendChild(sc);
   }));
 }
