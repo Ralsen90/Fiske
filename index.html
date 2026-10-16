@@ -15,7 +15,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <style>:root{
   --bg:#E4EAE6; --paper:#F4F7F4; --ink:#13303A; --muted:#58696C; --line:#C9D3CF;
-  --reed:#56723A; --water:#2F6F86; --fly:#C95A17; --night:#1B3440; --twi:#7C93A0; --day:#E9D9A6;
+  --reed:#56723A; --water:#2F6F86; --fly:#B8500F; --on-fly:#FFFFFF; --night:#1B3440; --twi:#7C93A0; --day:#E9D9A6;
   --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
   --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
   box-sizing:border-box;
@@ -25,38 +25,41 @@
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#0F1D22; --paper:#162931; --ink:#E2ECEA; --muted:#93A6A8; --line:#294049;
-    --reed:#9DB86B; --water:#72B4CA; --fly:#EE8A47; --night:#08141A; --twi:#40606E; --day:#8C7A45;
+    --reed:#9DB86B; --water:#72B4CA; --fly:#EE8A47; --on-fly:#13303A; --night:#08141A; --twi:#40606E; --day:#8C7A45;
   }
 }
 :root[data-theme="dark"]{
   --bg:#0F1D22; --paper:#162931; --ink:#E2ECEA; --muted:#93A6A8; --line:#294049;
-  --reed:#9DB86B; --water:#72B4CA; --fly:#EE8A47; --night:#08141A; --twi:#40606E; --day:#8C7A45;
+  --reed:#9DB86B; --water:#72B4CA; --fly:#EE8A47; --on-fly:#13303A; --night:#08141A; --twi:#40606E; --day:#8C7A45;
 }
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.45;-webkit-text-size-adjust:100%}
-.wrap{max-width:760px;margin:0 auto;padding:18px 16px 60px}
+.wrap{max-width:760px;margin:0 auto;padding:18px 16px calc(96px + env(safe-area-inset-bottom,0px))}
+body.trip header{display:none}
+body.trip .wrap{padding-top:10px}
 header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-bottom:14px;border-bottom:2px solid var(--ink)}
 h1{font-family:var(--display);font-weight:700;font-size:clamp(44px,12vw,72px);line-height:.88;letter-spacing:-.01em;margin:0}
 .sub{color:var(--muted);font-size:15px;margin-top:6px}
 .clock{font-family:var(--display);font-weight:600;font-size:34px;line-height:1;text-align:right}
-.clock small{display:block;font-family:var(--body);font-weight:500;font-size:13px;color:var(--muted);margin-top:4px}
-nav{display:flex;gap:4px;margin:16px 0 20px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:4px}
-nav button{flex:1;font:600 16px var(--display);letter-spacing:.02em;padding:10px 6px;border:0;border-radius:7px;background:transparent;color:var(--muted);cursor:pointer}
+.clock small{display:block;font-family:var(--body);font-weight:500;font-size:14px;color:var(--muted);margin-top:4px}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;gap:4px;background:var(--paper);border-top:1px solid var(--line);padding:6px max(8px,calc((100% - 760px)/2)) calc(6px + env(safe-area-inset-bottom,0px))}
+nav button{flex:1;font:600 17px var(--display);letter-spacing:.02em;padding:14px 6px;min-height:52px;border:0;border-radius:7px;background:transparent;color:var(--muted);cursor:pointer}
 nav button[aria-selected="true"]{background:var(--ink);color:var(--paper)}
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid var(--water);outline-offset:2px}
 section[hidden]{display:none}
 h2{font-family:var(--display);font-weight:600;font-size:26px;margin:28px 0 10px;line-height:1.1}
 h2:first-child{margin-top:4px}
+section{padding-top:14px}
 p{margin:0 0 10px;max-width:68ch}
 .muted{color:var(--muted)}
 
 /* Dagsljusbandet */
 .band{position:relative;height:74px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
-.band-labels{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-top:4px}
+.band-labels{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);margin-top:4px}
 .now{position:absolute;top:0;bottom:0;width:2px;background:var(--fly)}
 .now::after{content:"";position:absolute;top:-1px;left:-5px;border:6px solid transparent;border-top-color:var(--fly)}
-.tick{position:absolute;bottom:4px;font:600 14px var(--display);color:var(--ink);transform:translateX(-50%);white-space:nowrap}
+.tick{position:absolute;bottom:4px;font:600 14px var(--display);color:var(--ink);background:var(--paper);border-radius:4px;padding:0 5px;transform:translateX(-50%);white-space:nowrap}
 .tick.light{color:#F4F7F4}
 .lightnow{margin-top:14px;font-family:var(--display);font-size:30px;font-weight:600;line-height:1.1}
 .lightnow span{color:var(--muted);font-weight:500;font-size:20px}
@@ -69,7 +72,7 @@ p{margin:0 0 10px;max-width:68ch}
 .empty{background:var(--paper);border:1px dashed var(--line);border-radius:10px;padding:16px}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font:600 18px var(--display);letter-spacing:.02em;padding:12px 18px;border-radius:8px;border:2px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;min-height:48px}
-.btn.primary{background:var(--fly);border-color:var(--fly);color:#fff}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:var(--paper)}
 .btn.small{font-size:15px;padding:6px 12px;min-height:36px;border-width:1.5px}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 
@@ -84,8 +87,10 @@ textarea{min-height:96px;resize:vertical}
 .split{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .formbar{grid-column:1/-1;display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding-top:6px}
 .note{font-size:14px;color:var(--muted)}
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:8px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast{position:fixed;z-index:6;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:12px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:8px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.show{opacity:1}
+.toast.undo{pointer-events:auto;padding:6px 6px 6px 16px}
+.toast button{font:700 17px var(--display);min-height:44px;padding:0 16px;border:0;border-radius:6px;background:var(--fly);color:var(--on-fly);cursor:pointer}
 @media (max-width:520px){form{grid-template-columns:1fr}}
 
 /* Loggbok */
@@ -105,7 +110,7 @@ td.num{font-variant-numeric:tabular-nums}
 .e-meta{grid-column:1/2;color:var(--muted);font-size:14px}
 .e-res{grid-row:1/3;grid-column:2;align-self:center;font-family:var(--display);font-weight:700;font-size:26px;text-align:right;line-height:1}
 .e-res.hit{color:var(--fly)}
-.e-res small{display:block;font-family:var(--body);font-weight:500;font-size:13px;color:var(--muted)}
+.e-res small{display:block;font-family:var(--body);font-weight:500;font-size:14px;color:var(--muted)}
 .e-body{padding:0 0 14px}
 .e-body dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:0 0 12px;font-size:15px}
 .e-body dt{color:var(--muted)}
@@ -121,7 +126,7 @@ td.num{font-variant-numeric:tabular-nums}
 .why li b{color:var(--ink);font-weight:600}
 .win{display:grid;grid-template-columns:1fr 110px 40px;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:15px}
 .win .wl b{font-weight:600}
-.win .wl span{display:block;color:var(--muted);font-size:13px}
+.win .wl span{display:block;color:var(--muted);font-size:14px}
 .bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
 .bar i{display:block;height:100%;background:var(--water)}
 .win .sc{font-family:var(--display);font-weight:700;font-size:20px;text-align:right}
@@ -129,7 +134,7 @@ td.num{font-variant-numeric:tabular-nums}
 ol.similar{padding-left:20px;margin:0}
 details.imp summary{cursor:pointer;font-weight:600;padding:8px 0}
 
-.fact .src{display:block;font-size:12px;color:var(--muted);opacity:.85}
+.fact .src{display:block;font-size:13px;color:var(--muted)}
 small.u{font-size:16px;font-weight:600}
 .small{font-size:14px}
 .hit{color:var(--fly);font-weight:600}
@@ -140,25 +145,15 @@ small.u{font-size:16px;font-weight:600}
 .filebtn input{display:none}
 
 h3{font-family:var(--display);font-weight:600;font-size:20px;margin:22px 0 4px}
-.fact .src{display:block;font-size:12px;color:var(--muted);opacity:.85}
-small.u{font-size:16px;font-weight:600}
-.small{font-size:14px}
-.hit{color:var(--fly);font-weight:600}
-.wins{margin-top:10px}
-.note{margin-top:10px}
 .warn{border-left:3px solid var(--fly);padding-left:10px}
-.fetchrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0 10px}
-.backup{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 10px}
-.filebtn input{display:none}
 .bigrow{display:grid;gap:10px}
-.hugg-btn{width:100%;min-height:120px;font:700 44px var(--display);letter-spacing:.02em;border:0;border-radius:14px;background:var(--fly);color:#fff;cursor:pointer;margin:14px 0}
+.hugg-btn{width:100%;min-height:120px;font:700 44px var(--display);letter-spacing:.02em;border:0;border-radius:14px;background:var(--fly);color:var(--on-fly);cursor:pointer;margin:14px 0}
 .hugg-btn:active{transform:scale(.98)}
 .timer{font-family:var(--display);font-weight:600;font-size:26px}
 .hrow{display:grid;grid-template-columns:auto 1fr 1fr auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
-#aktivHugg .hrow{grid-template-columns:auto 1fr 1fr}
 .hrow .ht{font-family:var(--display);font-weight:600;font-size:20px;min-width:52px}
 .hrow input[type=time]{min-width:96px}
-.x{border:0;background:transparent;color:var(--muted);font-size:26px;width:40px;height:40px;cursor:pointer}
+.x{border:0;background:transparent;color:var(--muted);font-size:28px;width:44px;height:44px;cursor:pointer}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}
 .chips span{font-size:14px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
 .hlist{margin:0 0 12px;padding-left:18px}
@@ -206,16 +201,17 @@ small.u{font-size:16px;font-weight:600}
 #aktivHugg .hrow{grid-template-columns:auto 1fr 1fr 70px}
 .hrow input.len{min-width:0}
 .matt .split,.split{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-.hrow2{grid-template-columns:84px minmax(0,1fr) minmax(0,1fr) 40px}
+.hrow2{grid-template-columns:84px minmax(0,1fr) minmax(0,1fr) 44px}
 .hrow2 select{min-width:0}
-.ci{color:var(--muted);font-size:13px}
+.ci{color:var(--muted);font-size:14px}
+.tempname{border-color:var(--fly);border-width:2px}
 .tbl td:first-child{white-space:normal;min-width:130px;max-width:190px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div><h1>Gåsahalsen</h1><div class="sub">Rönne å, Ängelholm</div></div>
+    <div><h1>Rönne å</h1><div class="sub">Fiskelogg, Ängelholm</div></div>
     <div class="clock" id="clock">--:--<small id="date"></small></div>
   </header>
   <nav role="tablist">
@@ -226,15 +222,16 @@ small.u{font-size:16px;font-weight:600}
   </nav>
 
   <section id="lage">
+    <h2>Nästa bästa lucka</h2>
+    <div id="scan"></div>
+    <h2>Mätvärden</h2>
+    <div class="fetchrow"><button class="btn primary" id="fetchBtn">Hämta läget</button><button class="btn" id="startLage">Starta pass</button></div>
+    <div id="measures"></div>
+    <h2>Ljuset idag</h2>
     <div class="band" id="band" aria-label="Dagsljus idag"></div>
     <div class="band-labels"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div>
     <div class="lightnow" id="lightnow"></div>
     <div class="facts" id="sunfacts"></div>
-    <h2>Mätvärden</h2>
-    <div class="fetchrow"><button class="btn primary" id="fetchBtn">Hämta läget</button><button class="btn" id="startLage">Starta pass</button></div>
-    <div id="measures"></div>
-    <h2>Nästa bästa lucka</h2>
-    <div id="scan"></div>
   </section>
 
   <section id="pass" hidden>
@@ -268,14 +265,14 @@ small.u{font-size:16px;font-weight:600}
         <label style="display:block;margin-top:10px">Sikt i vattnet</label>
         <div class="seg" id="m_klar"><button type="button" data-v="Klart">Klart</button><button type="button" data-v="Medel">Medel</button><button type="button" data-v="Grumligt">Grumligt</button></div>
       </details>
-      <div class="row" style="margin-top:16px"><button class="btn primary" id="endBtn">Avsluta pass</button><button class="btn" id="cancelAktiv">Avbryt</button></div>
+      <div class="row" style="margin-top:16px"><button class="btn" id="endBtn">Avsluta pass</button><button class="btn" id="cancelAktiv">Avbryt</button></div>
     </div>
     <div id="formBox" hidden>
       <h2 id="formTitle">Spara pass</h2>
       <form id="passForm" autocomplete="off">
         <div class="f"><label for="f_start">Start</label><input type="datetime-local" id="f_start" required></div>
         <div class="f"><label for="f_end">Slut</label><input type="datetime-local" id="f_end" required></div>
-        <div class="f"><label for="f_plats">Plats</label><select id="f_plats"></select></div>
+        <div class="f"><label for="f_plats">Plats</label><select id="f_plats"></select><input id="f_platsnamn" class="tempname" list="platsList" placeholder="Namnge platsen" autocapitalize="sentences" hidden><datalist id="platsList"></datalist></div>
         <div class="f"><label for="f_struktur">Struktur <em>(sparas för platsen)</em></label><select id="f_struktur"></select></div>
         <div class="f full note" id="f_posinfo" style="margin-top:-6px"></div>
         <div class="f"><label for="f_vtemp">Vattentemp <em>(°C)</em></label><input id="f_vtemp" inputmode="decimal"></div>
@@ -344,7 +341,13 @@ function localIso(d){ d = new Date(d); return d.getFullYear() + "-" + pad(d.getM
 function dstr(ms){ var d = new Date(ms); return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()); }
 function fmt(v, dec){ var n = num(v); if (n == null) return "–"; return n.toLocaleString("sv-SE", { maximumFractionDigits: dec == null ? 1 : dec }); }
 function sign(v, dec){ var n = num(v); if (n == null) return "–"; return (n > 0 ? "+" : "") + fmt(n, dec); }
-function toast(msg){ var t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast._t); toast._t = setTimeout(function(){ t.classList.remove("show"); }, 2600); }
+function toast(msg, undo){
+  var t = $("toast"); t.innerHTML = esc(msg) + (undo ? '<button type="button">Ångra</button>' : "");
+  t.classList.toggle("undo", !!undo);
+  if (undo) t.querySelector("button").onclick = function(){ clearTimeout(toast._t); t.classList.remove("show", "undo"); undo(); };
+  t.classList.add("show"); clearTimeout(toast._t);
+  toast._t = setTimeout(function(){ t.classList.remove("show", "undo"); }, undo ? 5000 : 2600);
+}
 function load(k, def){ try { var r = localStorage.getItem(k); return r ? JSON.parse(r) : def; } catch(e){ return def; } }
 function save(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch(e){ return false; } }
 function ago(t){ if (!t) return ""; var m = Math.round((Date.now() - t)/60000); return m < 60 ? m + " min sedan" : m < 48*60 ? Math.round(m/60) + " h sedan" : Math.round(m/1440) + " dygn sedan"; }
@@ -1036,6 +1039,7 @@ function recentRiggs(){
 }
 function renderPass(){
   $("aktivBox").hidden = !aktiv; $("startBox").hidden = !!aktiv || !!form; $("formBox").hidden = !form;
+  document.body.classList.toggle("trip", !!aktiv && !$("pass").hidden);
   if (aktiv){
     $("aktivStart").textContent = "Startade " + hm(aktiv.start) + ", " + dur(Date.now() - aktiv.start);
     var sp = curSpot();
@@ -1081,7 +1085,8 @@ $("startLage").addEventListener("click", function(){ startPass(); showTab("pass"
 $("huggBtn").addEventListener("click", function(){
   var t = Date.now(), h = { t: t, utfall: "Hugg", art: MAL === "Alla" ? "Abborre" : MAL };
   aktiv.hugg.push(h); saveAktiv(); renderPass();
-  if (navigator.vibrate) navigator.vibrate(60); toast("Hugg " + hm(t));
+  if (navigator.vibrate) navigator.vibrate(60);
+  toast("Hugg " + hm(t), function(){ var i = aktiv ? aktiv.hugg.indexOf(h) : -1; if (i >= 0){ aktiv.hugg.splice(i, 1); saveAktiv(); renderPass(); toast("Hugget borttaget"); } });
   locate(t).then(function(s){ if (s && aktiv && aktiv.hugg.indexOf(h) >= 0){ h.pos = s.pos; saveAktiv(); } });
 });
 $("bytesBtn").addEventListener("click", function(){ aktiv.logg.push({ t: Date.now(), typ: "bytesfisk" }); saveAktiv(); renderPass(); toast("Bytesfisk " + hm(Date.now())); });
@@ -1144,6 +1149,8 @@ function openForm(p, isNew){
   $("f_start").value = localIso(form.start); $("f_end").value = localIso(form.end);
   var pl = platser(); if (form.plats && pl.indexOf(form.plats) < 0) pl.push(form.plats);
   $("f_plats").innerHTML = opts(pl, form.plats) + '<option value="__ny">Ny plats…</option>';
+  $("f_platsnamn").hidden = !isTempName(form.plats); $("f_platsnamn").value = "";
+  $("platsList").innerHTML = pl.filter(function(n){ return !isTempName(n); }).map(function(n){ return '<option>' + esc(n) + '</option>'; }).join("");
   $("f_struktur").innerHTML = opts(STRUKTUR, form.struktur || "").replace('value="">Art', 'value="">Välj');
   $("f_posinfo").textContent = form.pos ? "GPS-position sparad" + (form.mynningKm != null ? ", " + fmt(form.mynningKm) + " km från mynningen längs ån" : ", mer än 300 m från ån") + "." : "";
   var mt = form.matt || {};
@@ -1162,13 +1169,17 @@ function openForm(p, isNew){
   renderFormHugg(); renderFormLogg(); renderFormAuto();
   renderPass(); showTab("pass");
 }
+function isTempName(n){ return /^Ny plats /.test(n || ""); }
+function rememberPlats(n){ var l = load(K.platser, []); if (l.indexOf(n) < 0){ l.push(n); save(K.platser, l); } }
 function renderFormLogg(){
   var l = form.logg || [];
   var pl = platser();
   $("f_logg").innerHTML = l.length ? l.map(function(e, i){
     if (e.typ === "plats"){
       var list = pl.indexOf(e.plats) < 0 ? pl.concat([e.plats]) : pl;
-      return '<div class="hrow" style="grid-template-columns:auto 1fr 1fr auto"><span class="ht">' + hm(e.t) + '</span><select data-li="' + i + '" data-lf="plats" aria-label="Flyttade till">' + opts(list, e.plats) + '<option value="__ny">Ny plats…</option></select>' +
+      var field = isTempName(e.plats) ? '<input class="tempname" list="platsList" data-li="' + i + '" data-lf="namn" placeholder="Namnge platsen" aria-label="Namnge platsen">'
+        : '<select data-li="' + i + '" data-lf="plats" aria-label="Flyttade till">' + opts(list, e.plats) + '<option value="__ny">Ny plats…</option></select>';
+      return '<div class="hrow" style="grid-template-columns:auto minmax(0,1fr) minmax(0,1fr) auto"><span class="ht">' + hm(e.t) + '</span>' + field +
         '<select data-li="' + i + '" data-lf="struktur" aria-label="Struktur">' + opts(STRUKTUR, e.struktur || "").replace('value="">Art', 'value="">Struktur') + '</select><button type="button" class="x" data-ldel="' + i + '" aria-label="Ta bort">×</button>' +
         (e.mynningKm != null ? '<span class="muted small" style="grid-column:2/-1">' + fmt(e.mynningKm) + ' km från mynningen</span>' : '') + '</div>';
     }
@@ -1179,9 +1190,11 @@ function renderFormLogg(){
 $("f_logg").addEventListener("click", function(ev){ var b = ev.target.closest("[data-ldel]"); if (b){ form.logg.splice(+b.dataset.ldel, 1); renderFormLogg(); renderFormHugg(); } });
 $("f_logg").addEventListener("change", function(ev){
   var s = ev.target, e = form.logg[+s.dataset.li]; if (!e) return;
-  if (s.dataset.lf === "plats"){
-    var n = s.value;
-    if (n === "__ny"){ n = (prompt("Namn på platsen") || "").trim(); if (!n){ renderFormLogg(); return; } var l = load(K.platser, []); l.push(n); save(K.platser, l); }
+  if (s.dataset.lf === "plats" || s.dataset.lf === "namn"){
+    var n = s.dataset.lf === "namn" ? s.value.trim() : s.value;
+    if (!n) return;
+    if (n === "__ny"){ n = (prompt("Namn på platsen") || "").trim(); if (!n){ renderFormLogg(); return; } }
+    rememberPlats(n);
     var old = e.plats; form.logg.forEach(function(x){ if (x.typ === "plats" && x.plats === old) x.plats = n; });
     var known = knownSpots().filter(function(k){ return k.namn === n && k.struktur; })[0]; if (known && !e.struktur) e.struktur = known.struktur;
   } else e.struktur = s.value;
@@ -1224,7 +1237,8 @@ function renderFormAuto(){
 $("refetch").addEventListener("click", function(){ readForm(); fetchFor(form, function(){ renderFormAuto(); }); });
 function readForm(){
   form.start = new Date($("f_start").value).getTime(); form.end = new Date($("f_end").value).getTime();
-  var nyPlats = $("f_plats").value === "__ny" ? form.plats : $("f_plats").value;
+  var nyPlats = $("f_plats").value === "__ny" ? form.plats : $("f_plats").value, namn = $("f_platsnamn").value.trim();
+  if (!$("f_platsnamn").hidden && namn){ nyPlats = namn; rememberPlats(namn); }
   // Byter man namn på startplatsen följer hugg och byten med som låg på samma plats
   if (nyPlats !== form.plats && form.plats) (form.logg || []).forEach(function(e){ if (e.typ === "plats" && e.plats === form.plats) e.plats = nyPlats; });
   form.plats = nyPlats; form.struktur = $("f_struktur").value;
@@ -1335,7 +1349,7 @@ function renderAnalys(){
   html += '<p class="muted">' + S.tot.pass + ' pass, ' + fmt(S.tot.h) + ' timmar, ' + S.tot.n + ' ' + malTxt + ' varav ' + S.tot.landade + ' landade' + (S.tot.andra ? ', ' + S.tot.andra + ' hugg av andra arter' : '') + (S.tot.foljare ? ', ' + S.tot.foljare + ' följare' : '') + '. Snitt ' + fmt(S.R, 2) + ' ' + malTxt + ' per timme.</p>';
   if (!S.tot.n) html += '<p class="note warn">Inga ' + malTxt + ' i loggen än. Tabellerna visar bara var du har fiskat. Appens poäng bygger tills vidare på forskningen om arten.</p>';
   else if (S.tot.n < 30) html += '<p class="note warn">Med ' + S.tot.n + ' ' + malTxt + ' är de flesta skillnader nedan slump. Titta på spannet: bara rader markerade <b class="hit">tydlig</b> skiljer sig så mycket att slumpen sannolikt inte räcker som förklaring. Det kräver också minst 3 pass i läget och hugg från minst 2 olika pass, eftersom ett enda bra pass annars kan se ut som ett mönster.</p>';
-  html += '<p class="muted small">Index 100 är ditt snitt. Spannet inom parentes visar var det sanna värdet troligen ligger (90 %). Ju färre timmar och hugg, desto bredare spann.</p>';
+  html += '<p class="muted small">Index 100 är ditt snitt. Spannet under visar var det sanna värdet troligen ligger (90 %). Ju färre timmar och hugg, desto bredare spann.</p>';
   FACTORS.concat(PASSFACT).forEach(function(f){
     var rows = Object.keys(S[f.k]).map(function(b){ var o = S[f.k][b]; return { b: b, h: o.h, n: o.n, np: Object.keys(o.p || {}).length, nbp: Object.keys(o.bp || {}).length }; }).filter(function(r){ return r.h > 0 || r.n > 0; });
     if (!rows.length) return;
@@ -1345,7 +1359,7 @@ function renderAnalys(){
         var rate = r.h ? r.n/r.h : 0, idx = S.R && r.h ? Math.round(rate/S.R*100) : null, ci = S.R && r.h ? poissonCI(r.n) : null, cell = "–", cls = "";
         if (idx != null){
           var lo = Math.round(ci[0]/r.h/S.R*100), hi = Math.round(ci[1]/r.h/S.R*100);
-          cell = idx + ' <span class="ci">(' + lo + '–' + hi + ')</span>';
+          cell = idx + '<br><span class="ci">' + lo + '–' + hi + '</span>';
           // Hugg från samma pass hänger ihop, så det krävs flera pass innan en skillnad räknas som tydlig
           if ((lo > 100 || hi < 100) && r.np >= 3 && (hi < 100 || r.nbp >= 2)){ cell += ' <b class="hit">tydlig</b>'; cls = lo > 100 ? " hit" : ""; }
         }
@@ -1519,6 +1533,7 @@ function showTab(name){
   document.querySelectorAll("nav button").forEach(function(b){ b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false"); });
   ["lage", "pass", "bok", "analys"].forEach(function(s){ $(s).hidden = s !== name; });
   if (name === "analys") renderAnalys();
+  document.body.classList.toggle("trip", !!aktiv && name === "pass");
   window.scrollTo(0, 0);
 }
 document.querySelectorAll("nav button").forEach(function(b){ b.addEventListener("click", function(){ showTab(b.dataset.tab); }); });
