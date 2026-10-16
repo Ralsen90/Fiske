@@ -713,7 +713,7 @@ var PASSFACT = [
   { k: "bytesfisk", namn: "Bytesfisk sedd under passet", of: function(s){ return s.bytesfisk; } },
   { k: "strom", namn: "Strömdrag", of: function(s){ return s.strom; } }
 ];
-var ARTER_ALLA = ["Abborre", "Gädda", "Havsöring", "Gös", "Id", "Mört", "Lax", "Horngädda", "Annan"];
+var ARTER_ALLA = ["Abborre", "Gädda", "Öring", "Havsöring", "Gös", "Id", "Mört", "Lax", "Horngädda", "Annan"];
 function isHugg(h){ return h.utfall !== "Följare"; }
 function isMal(h){ return isHugg(h) && (MAL === "Alla" || h.art === MAL); }
 function stateAt(p, t){
